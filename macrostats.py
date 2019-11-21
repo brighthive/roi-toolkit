@@ -132,19 +132,20 @@ class Calculations:
 		-------
 		A single number indicating the employment change over the given period
 		"""
+
+		# configure dtype of input
 		start_month_year = pd.to_datetime(start_month).to_period('M')
 		end_month_year = pd.to_datetime(end_month).to_period('M')
 
+		# get employment figures
 		start_employment = bls_employment_table.loc[bls_employment_table.month_year == start_month, 'value'].astype(int).iat[0]
-		print(start_employment)
 		end_employment = bls_employment_table.loc[bls_employment_table.month_year == end_month, 'value'].astype(int).iat[0]
-		print(end_employment)
 
+		# get labor force figures
 		start_labor_force = bls_labor_force_table.loc[bls_labor_force_table.month_year == start_month, 'value'].astype(int).iat[0]
-		print(start_labor_force)
 		end_labor_force = bls_labor_force_table.loc[bls_labor_force_table.month_year == end_month, 'value'].astype(int).iat[0]
-		print(end_labor_force)
 
+		# calculation
 		employment_change = float((end_employment / end_labor_force) - (start_employment / start_labor_force))
 
 		return employment_change
