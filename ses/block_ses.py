@@ -1,5 +1,6 @@
 import requests
 import os
+import pandas as pd
 
 """
 
@@ -72,8 +73,23 @@ https://www.neighborhoodatlas.medicine.wisc.edu/
 
 
 
-
 """
+
+class ADI:
+	adi_location = "../data/adi-download/US_blockgroup_15.txt"
+
+	def get_adi_frame():
+		"""
+		adi_natrank is the national percentile of block group ADI score
+		"""
+		adi = pd.read_csv(ADI.adi_location, sep=',') # read in ADI by block group from text file
+		adi['adi_natrank_numeric'] = pd.to_numeric(adi['adi_natrank'], errors='coerce')
+		adi['adi_quintile'] = pd.qcut(adi['adi_natrank_numeric'], [0, 0.2, 0.4, 0.6, 0.8, 1], labels=["0-20","20-40","40-60","60-80","80-100"])
+		return(adi)
+
+	def get_quintile_for_geocode(fips_geocode, adi_frame):
+		slice_ = adi_frame[adi_frame.fips == fips_geocode, 'adi_quintile'].iat(0)
+		return(slice_)
 
 api_key = ""
 
@@ -83,12 +99,17 @@ def get_geocode_for_address(address, city, state_code):
 	response_content = response.content
 	return response_content
 
+'''
 def get_geocode_data(geocode):
 	url = ("https://api.census.gov/data/2015/pdb/blockgroup?get=State_name,County_name,Tot_Population_CEN_2010&for=block%20group:3&in=state:36%20county:047&key=83ea085e6097fe91bbfe7bf60ca905a272850cfa")
 	response = requests.get(url)
-	response_content = resopnse.content
+	response_content = response.content
 	return response_content
+'''
 
 if __name__ == "__main__":
-	a = get_geocode_for_address("102 Bergen St.","Brooklyn","NY")
-	print(a)
+	example_geocode = get_geocode_for_address("102 Bergen St.","Brooklyn","NY")
+	adi_frame = ADI.get_adi_frame()
+	geocode_quintile = ADI.get_quintile_for_geocode(example_geocode, adi_frame)
+	print(geocode_quintile)
+
