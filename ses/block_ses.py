@@ -21,7 +21,6 @@ https://api.census.gov/data/2015/pdb/blockgroup?get=State_name,County_name,Tot_P
 Geocoder API information:
 https://geocoding.geo.census.gov/
 
-
 #### Census
 
 # Summary of 5-year estimates
@@ -32,47 +31,6 @@ https://www.census.gov/acs/www/data/data-tables-and-tools/data-profiles/
 
 # Variable listing for 5-year API
 https://api.census.gov/data/2017/acs/acs5/profile/variables.html
-
-#### Constructing National Cancer Institute SES
-
-Without immediate access to the SEER data, we'll have to construct SES indices ourselves here. We'll calculate using SEER's methodology (https://seer.cancer.gov/seerstat/databases/census-tract/index.html)
-
-Some of these variables are available from IPUMS (ACS), but the smallest region available from IPUMS is the PUMA, which contains several tracts.
-Tracts contain several block groups.
-
-A guide to constructing these variables (via SEER) is here: https://seer.cancer.gov/seerstat/variables/countyattribs/time-dependent.html
-
-There are seven variables:
-1) Median household income
-2) Median house value
-3) Median rent
-4) Percent below 150% of poverty line (not in IPUMS?)
-50 Education Index (Liu et al., 1998) (???)
-6) Percent working class (not in IPUMS?)
-7) Percent unemployed
-
-Sources for this
-Yu et al 2014 - https://www.ncbi.nlm.nih.gov/pubmed/24178398
-Lieu et al 1998 - https://www.ncbi.nlm.nih.gov/pubmed/9794168
-
-# article
-https://link.springer.com/article/10.1007%2Fs11524-015-9959-y
-
-#### Other SES measures
-
-(Census-based socioeconomic indicators for monitoring injury causes in the USA: a review)
-https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4518757/
-
-(Validating the Use of Census Data on Education as a Measure of Socioeconomic Status in an Occupational Cohort.)
-https://www.ncbi.nlm.nih.gov/pubmed/30451561
-
-(Measuring Socioeconomic Status (SES) in the NCVS: Background, Options, and Recommendations)
-https://www.bjs.gov/content/pub/pdf/Measuring_SES-Paper_authorship_corrected.pdf
-
-#### Area Deprivation Index
-https://www.neighborhoodatlas.medicine.wisc.edu/
-
-
 
 """
 
@@ -145,14 +103,25 @@ def get_geocode_for_address(address, city, state_code):
 	"""
 
 	url = "https://geocoding.geo.census.gov/geocoder/geographies/address?street={}&city={}&state={}&benchmark=9&format=json&vintage=Census2010_Census2010".format(address, city, state_code)
-	response = requests.get(url)
-	response_content = response.content
-	response_parsed = json.loads(response_content)
-	first_address_match = response_parsed['result']['addressMatches'][0]
-	first_address_match_geographies = first_address_match['geographies']
-	tract_geoid = str(first_address_match_geographies['Census Tracts'][0]['GEOID'])
-	block_group = str(first_address_match_geographies['Census Blocks'][0]['BLKGRP'])
-	return "{}{}".format(tract_geoid, block_group)
+
+	# first fetch response
+	try:
+		response = requests.get(url)
+		response_content = response.content
+		response_parsed = json.loads(response_content)
+	except Exception as e:
+		print("EXCEPTION: Couldn't get geocoding API response for {}:\n 	{}".format(address, e))
+
+	# access necessary elements
+	try:
+		first_address_match = response_parsed['result']['addressMatches'][0]
+		first_address_match_geographies = first_address_match['geographies']
+		tract_geoid = str(first_address_match_geographies['Census Tracts'][0]['GEOID'])
+		block_group = str(first_address_match_geographies['Census Blocks'][0]['BLKGRP'])
+		return "{}{}".format(tract_geoid, block_group)
+	except Exception as e:
+		print("EXCEPTION: Couldn't access vital response elements in geocodei API response:\n 	{}".format(e))
+		return ""		
 
 if __name__ == "__main__":
 	#example_geocode = get_geocode_for_address("800 Ashford St.","Brooklyn","NY")
