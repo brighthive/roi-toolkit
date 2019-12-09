@@ -51,7 +51,7 @@ class Theil_T:
 	def Calculate_Ratio(array_of_groups):
 		first_term = Theil_T.first_term(array_of_groups)
 		second_term = Theil_T.second_term(array_of_groups)
-		ratio = first_term / (first_term + second_term)
+		ratio = second_term / (first_term + second_term)
 		return ratio
 
 if __name__ == "__main__":
@@ -60,8 +60,8 @@ if __name__ == "__main__":
 	#sum_along_axes = Supporting.group_aggregation(test_microdata, ['race','gender'],'data','sum')
 
 	#x = abs(np.random.uniform(0,100,100000))
-	x = np.concatenate([np.repeat(3,1000), np.repeat(2,1000)])
-	y = np.concatenate([np.repeat(3,1000), np.repeat(2,1000)])
+	x = np.concatenate([np.repeat(3,1000), np.repeat(3,1000)])
+	y = np.concatenate([np.repeat(3.1,1000), np.repeat(3.1,1000)])
 	z = np.array([x,y])
 	answer = Theil_T.Calculate_Ratio(z)
 	print(answer)
