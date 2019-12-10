@@ -23,8 +23,11 @@ class CPS_Extract_Data:
 	EDUC
 	INCWAGE
 	STATEFIP
+	CPI99
+	(ASECWT is included automatically)
+
 	"""
-	filepath_to_csv = "../data/cps/cps_00023.csv"
+	filepath_to_csv = "../data/cps/cps_00024.csv"
 
 class CPS_Ops(object):
 	def __init__(self):
@@ -32,17 +35,18 @@ class CPS_Ops(object):
 		self.microdata['age_group'] = pd.cut(self.microdata['AGE'], bins=[0,18,25,34,54,64,150], right=True).astype(str)
 		self.microdata['hs_education_at_most'] = self.microdata['EDUC'] < 80
 		self.microdata.loc[self.microdata.INCWAGE > 9999998, 'INCWAGE'] = np.nan
+		self.microdata['INCWAGE_99'] = self.microdata['INCWAGE'] * self.microdata['CPI99']
 		self.hs_grads_only = self.microdata[self.microdata.hs_education_at_most == 1]
 		self.get_all_mean_wages()
 		self.get_hs_grads_mean_wages()
 
 	def get_all_mean_wages(self):
-		mean_wages = self.microdata.groupby(['YEAR','STATEFIP','age_group']).apply(lambda x: pd.Series({"mean_INCWAGE":np.sum(x['INCWAGE'] * x['ASECWT'])/np.sum(x['ASECWT'])})).reset_index()
+		mean_wages = self.microdata.groupby(['YEAR','STATEFIP','age_group']).apply(lambda x: pd.Series({"mean_INCWAGE":np.sum(x['INCWAGE_99'] * x['ASECWT'])/np.sum(x['ASECWT'])})).reset_index()
 		self.all_mean_wages = mean_wages
 		return None
 
 	def get_hs_grads_mean_wages(self):
-		mean_wages = self.hs_grads_only.groupby(['YEAR','STATEFIP','age_group']).apply(lambda x: pd.Series({"mean_INCWAGE":np.sum(x['INCWAGE'] * x['ASECWT'])/np.sum(x['ASECWT'])})).reset_index()
+		mean_wages = self.hs_grads_only.groupby(['YEAR','STATEFIP','age_group']).apply(lambda x: pd.Series({"mean_INCWAGE":np.sum(x['INCWAGE_99'] * x['ASECWT'])/np.sum(x['ASECWT'])})).reset_index()
 		self.hs_grads_mean_wages = mean_wages
 		return None
 
