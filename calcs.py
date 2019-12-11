@@ -1,8 +1,11 @@
 import pandas as pd
 import numpy as np
 
-def dataframe_to_ndarray(dataframe):
-	return None
+def dataframe_groups_to_ndarray(dataframe, groupby_columns, value_to_groups):
+	grouped = dataframe.groupby(groupby_columns)[value_to_groups].apply(lambda x: np.array(x.values))
+	groups = np.array(grouped.index)
+	list_of_values = np.array(grouped)
+	return (groups, list_of_values)
 
 class Supporting:
 	def group_aggregation(dataframe, aggregation_category_list, variable_to_aggregate, aggregation_method):
@@ -55,7 +58,9 @@ class Theil_T:
 		return ratio
 
 if __name__ == "__main__":
-	#test_microdata = pd.read_csv("data/test_microdata.csv")
+	test_microdata = pd.read_csv("data/test_microdata.csv")
+	print(test_microdata)
+	exit()
 	#mean_along_axes = Supporting.group_aggregation(test_microdata, ['race','gender'],'data','mean')
 	#sum_along_axes = Supporting.group_aggregation(test_microdata, ['race','gender'],'data','sum')
 
