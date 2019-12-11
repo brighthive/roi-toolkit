@@ -1,5 +1,8 @@
 import pandas as pd
 import numpy as np
+from macrostats import *
+from datetime import date
+
 """
 TO do here:
 
@@ -30,12 +33,20 @@ class CPS_Extract_Data:
 	filepath_to_csv = "../data/cps/cps_00024.csv"
 
 class CPS_Ops(object):
+	"""
+	On init, this object reads in a CPS extract, calculates mean wages by age group across the whole population and for those whose
+	highest level of education his high school, and sets properties of the class to dataframes with those contents.
+
+	The class also offers functions for using this data to calculate average wage change across years, both given a single data point and
+	given a data given multiple time periods, age groups, etc.
+	"""
 	def __init__(self):
 		self.microdata = pd.read_csv(CPS_Extract_Data.filepath_to_csv)
 		self.microdata['age_group'] = pd.cut(self.microdata['AGE'], bins=[0,18,25,34,54,64,150], right=True).astype(str)
 		self.microdata['hs_education_at_most'] = self.microdata['EDUC'] < 80
 		self.microdata.loc[self.microdata.INCWAGE > 9999998, 'INCWAGE'] = np.nan
-		self.microdata['INCWAGE_99'] = self.microdata['INCWAGE'] * self.microdata['CPI99']
+		self.cpi_adjustment_factor = BLS_API.get_cpi_adjustment(1999,date.today().year) # CPS data is converted into 1999 base
+		self.microdata['INCWAGE_99'] = self.microdata['INCWAGE'] * self.microdata['CPI99'] * self.cpi_adjustment_factor
 		self.hs_grads_only = self.microdata[self.microdata.hs_education_at_most == 1]
 		self.get_all_mean_wages()
 		self.get_hs_grads_mean_wages()
