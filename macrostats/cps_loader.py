@@ -80,7 +80,7 @@ if __name__ == "__main__":
 	
 	cps = CPS_Ops()
 
-	example_frames_to_merge = pd.DataFrame([{"age_group":'(25.0, 34.0]',"year_start":2010,"year_end":2014,"statefip":1},{"age_group":'(18.0, 25.0]',"year_start":2010,"year_end":2014,"statefip":1},{"age_group":'(25.0, 34.0]',"year_start":2009,"year_end":2011,"statefip":2},{"age_group":'(25.0, 34.0]',"year_start":2014,"year_end":2019,"statefip":2}])
+	example_frames_to_merge = pd.DataFrame([{"age_group":'(25.0, 34.0]',"year_start":2010,"year_end":2014,"statefip":30},{"age_group":'(18.0, 25.0]',"year_start":2010,"year_end":2014,"statefip":1},{"age_group":'(25.0, 34.0]',"year_start":2009,"year_end":2011,"statefip":2},{"age_group":'(25.0, 34.0]',"year_start":2014,"year_end":2019,"statefip":30}])
 	wage_change_example = cps.wage_change_across_years(2009,2012,'(25.0, 34.0]',1)
 	wage_change_frame_example = cps.frames_wage_change_across_years(example_frames_to_merge,'year_start','year_end','age_group','statefip')
 	print(wage_change_frame_example)

@@ -1,4 +1,4 @@
-setwd('/users/matt/desktop/work/brighthive/colorado sbir/roi tool/data')
+setwd('roi/sbir-roi')
 
 races = c("Martian", "Venusian", "Earthling", "Neptunian")
 gender = c("Wan", "Moman")
@@ -13,4 +13,4 @@ for (i in 1:nrow(combos)) {
   frames_ <- rbind(frames_, frame_)
 }
 
-write.csv(frames_,"test_microdata.csv")
+write.csv(frames_,"data/test_microdata.csv")
