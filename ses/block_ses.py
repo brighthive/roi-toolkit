@@ -6,6 +6,8 @@ import numpy as np
 
 """
 
+# NOTE: Use batch geocoding!
+
 Documentation
 
 Geocoding API: https://geocoding.geo.census.gov/geocoder/Geocoding_Services_API.pdf
@@ -110,7 +112,8 @@ class ADI (object):
 
 		return(geocodes_merged)
 
-api_key = ""
+def get_batch_geocode(addresses):
+	return None
 
 def get_geocode_for_address(address, city, state_code):
 	"""
