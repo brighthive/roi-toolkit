@@ -44,14 +44,6 @@ example_response = '{"status":"REQUEST_SUCCEEDED","responseTime":137,"message":[
 
 BLS_API_KEY = os.getenv('BLS_API_KEY') # unnecessary for BLS series 1.0 api but series 2 overcomes extreme rate limiting
 
-class CPS_Fetch_Data:
-	def a():
-		return None
-
-class CPS_Calculations:
-	def b():
-		return None
-
 class Parameters:
 	BLS_measure_codes = {
 		"unemployment rate": "03",
@@ -61,6 +53,13 @@ class Parameters:
 	}
 
 class BLS_API:
+	def get_cpi(prefix="CU", seasonal_adjustment_code="S", periodicity="R", area_code="0000", base_code="S", item_code="A0"):
+		"""
+		Returns the CPI-U: The Consumer Price Index for Urban Consumers.
+		"""
+		series_id = prefix + seasonal_adjustment_code + periodicity + area_code + base_code + item_code
+		return series_id
+
 	def employment_series_id(prefix="LA", seasonal_adjustment_code="U", state_code="08", measure_code="employment"):
 		"""
 		Returns absolute numbers
@@ -70,15 +69,9 @@ class BLS_API:
 		series_id = prefix + seasonal_adjustment_code + area_code + measure_code
 		return series_id
 
-	# https://www.bls.gov/help/hlpforma.htm#SM
-	# state that works: https://api.bls.gov/publicAPI/v2/timeseries/data/SMU19000000500000011?startyear=2002&endyear=2018&registrationkey=c8803d0ba66c4592b8b0eff68ac9ebb0
-	# data type: 11 = average weekly earnings
 	def wage_series_id(prefix="SM", seasonal_adjustment_code="U", state_code="08", area_code="00000", industry_code="05000000", data_type_code="11"):
+		# data type 11 = average weekly earnings
 		series_id = prefix + seasonal_adjustment_code + state_code + area_code + industry_code + data_type_code
-		return series_id
-
-	def hs_grad_series_id():
-		# LEU0252917300 works
 		return series_id
 
 	def get_series(seriesid, startyear, endyear, api_key=BLS_API_KEY):
@@ -87,7 +80,7 @@ class BLS_API:
 		content = response.content
 		return content
 
-	def parse_api_response(json_response):
+	def parse_api_response(json_response, dataframe=True):
 		parsed = json.loads(json_response)
 		data_only = parsed['Results']['series'][0]['data']
 		data_frame = pd.DataFrame(data_only)
@@ -103,9 +96,26 @@ class BLS_API:
 
 		return(data_frame)
 
-class ACS_API:
-	def earnings_call():
-		return None
+	def get_cpi_adjustment(start_year, end_year):
+		"""
+		The CPI API returns only twenty years of data, and the time frame we are interested in may (will) span longer than twenty years.
+		So for any pair of years, we make two requests and simply return the adjustment factor
+		"""
+		series_id = BLS_API.get_cpi()
+		series_start = BLS_API.get_series(series_id, start_year, start_year)
+		series_end = BLS_API.get_series(series_id, end_year, end_year)
+
+		try:
+			start_frame = BLS_API.parse_api_response(series_start)
+			end_frame = BLS_API.parse_api_response(series_end)
+			start_cpi = start_frame.loc[start_frame.periodName == "January", "value"].iat[0]
+			end_cpi = end_frame.loc[end_frame.periodName == "January", "value"].iat[0]
+		except Exception as e:
+			print ("Error fetching BLS CPI Statistics: {}".format(e))
+			exit()
+
+		adjustment = end_cpi/start_cpi
+		return(adjustment)
 
 class Calculations:
 	"""
@@ -161,14 +171,11 @@ class Calculations:
 
 		return employment_change
 
-	def weekly_wage_to_annual(wage_frame):
-		return None
-
 	def wage_change(bls_wage_table, start_month, end_month):
 		"""
 		"""
 
-		bls_wage_table['bls_annual_wages'] = bls_wage_table['value'] * 52
+		bls_wage_table['bls_annual_wages'] = bls_wage_table['value'] * 52 # weekly wage to annual
 
 		# configure dtype of input
 		start_month_year = pd.to_datetime(start_month)
@@ -187,6 +194,9 @@ class Calculations:
 
 if __name__ == "__main__":
 
+	cpi_data = BLS_API.get_cpi_adjustment(2000,2019)
+	print(cpi_data)
+	exit()
 	
 	# series ids
 	employment_series_id = BLS_API.employment_series_id(measure_code="employment")
