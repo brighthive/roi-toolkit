@@ -3,6 +3,7 @@ import json
 import pandas as pd # using pandas here for the sake of (1) familiarity and (2) ease of extensibility
 import numpy as np
 import os
+from . import settings
 
 """
 
