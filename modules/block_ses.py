@@ -3,6 +3,7 @@ import os
 import pandas as pd
 import json
 import numpy as np
+import settings
 
 """
 
@@ -52,7 +53,7 @@ class ADI (object):
 	Finally, indices are bucketed into quintiles. IMPORTANT: Lower quintiles are HIGHER-SES. Higher quintiles are more deprived.
 	"""
 	def __init__(self):
-		adi_location = "../data/adi-download/US_blockgroup_15.txt"
+		adi_location = settings.File_Locations.adi_location
 		adi = pd.read_csv(adi_location, sep=',', dtype="str") # read in ADI by block group from text file
 		adi['adi_natrank_numeric'] = pd.to_numeric(adi['adi_natrank'], errors='coerce')
 		adi['adi_quintile'] = pd.qcut(adi['adi_natrank_numeric'], [0, 0.2, 0.4, 0.6, 0.8, 1], labels=["0-20","20-40","40-60","60-80","80-100"])
@@ -159,12 +160,14 @@ def get_geocode_for_address(address, city, state_code):
 		block_group = str(first_address_match_geographies['Census Blocks'][0]['BLKGRP'])
 		return "{}{}".format(tract_geoid, block_group)
 	except Exception as e:
-		print("EXCEPTION: Couldn't access vital response elements in geocodei API response:\n 	{}".format(e))
+		print(response_parsed)
+		print("EXCEPTION: Couldn't access vital response elements in geocode API response:\n 	{}".format(e))
 		return ""		
 
 if __name__ == "__main__":
 	adi = ADI()
 
-	geocode_ = get_geocode_for_address("211 Hoyt Street","Brooklyn","NY")
+	geocode_ = get_geocode_for_address("235 Dean Street","Brooklyn","NY")
 	geocode_quintile = adi.get_quintile_for_geocode(geocode_)
+	print(geocode_quintile)
 

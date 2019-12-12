@@ -1,7 +1,8 @@
 import pandas as pd
 import numpy as np
-from macrostats import BLS_API
+from .macrostats import BLS_API
 from datetime import date
+from . import settings
 
 """
 TO do here:
@@ -41,8 +42,8 @@ class CPS_Ops(object):
 	given a data given multiple time periods, age groups, etc.
 	"""
 	def __init__(self):
-		self.microdata = pd.read_csv(CPS_Extract_Data.filepath_to_csv)
-		self.microdata['age_group'] = pd.cut(self.microdata['AGE'], bins=[0,18,25,34,54,64,150], right=True, labels=['<18','19-24','25-34','35-54','55-64','65+']).astype(str)
+		self.microdata = pd.read_csv(settings.File_Locations.cps_extract)
+		self.microdata['age_group'] = pd.cut(self.microdata['AGE'], bins=[0,18,25,34,54,64,150], right=True, labels=['18 and under','19-25','26-34','35-54','55-64','65+']).astype(str)
 		self.microdata['hs_education_at_most'] = self.microdata['EDUC'] < 80
 		self.microdata.loc[self.microdata.INCWAGE > 9999998, 'INCWAGE'] = np.nan
 		self.cpi_adjustment_factor = BLS_API.get_cpi_adjustment(1999,date.today().year) # CPS data is converted into 1999 base
@@ -68,12 +69,6 @@ class CPS_Ops(object):
 		return(wage_change)
 
 	def frames_wage_change_across_years(self, ind_frame, start_year_column, end_year_column, age_group_start_column, statefip_column):
-		print(ind_frame[start_year_column].unique)
-		print(ind_frame[age_group_start_column].unique)
-		print(ind_frame[statefip_column].unique)
-		print(self.all_mean_wages['YEAR'].unique)
-		print(self.all_mean_wages['age_group'].unique)
-		print(self.all_mean_wages['STATEFIP'].unique)
 		merged_start = ind_frame.merge(self.all_mean_wages, left_on=[start_year_column, age_group_start_column, statefip_column], right_on=['YEAR','age_group','STATEFIP'], how='left')
 		merged_both = merged_start.merge(self.all_mean_wages, left_on=[end_year_column, age_group_start_column, statefip_column], right_on=['YEAR','age_group','STATEFIP'], how='left', suffixes=('_start','_end'))
 		merged_both['wage_change'] = merged_both['mean_INCWAGE_end'] - merged_both['mean_INCWAGE_start']
@@ -86,8 +81,8 @@ if __name__ == "__main__":
 	
 	cps = CPS_Ops()
 
-	example_frames_to_merge = pd.DataFrame([{"age_group":'(25.0, 34.0]',"year_start":2010,"year_end":2014,"statefip":30},{"age_group":'(18.0, 25.0]',"year_start":2010,"year_end":2014,"statefip":1},{"age_group":'(25.0, 34.0]',"year_start":2009,"year_end":2011,"statefip":2},{"age_group":'(25.0, 34.0]',"year_start":2014,"year_end":2019,"statefip":30}])
-	wage_change_example = cps.wage_change_across_years(2009,2012,'(25.0, 34.0]',1)
+	example_frames_to_merge = pd.DataFrame([{"age_group":'26-34',"year_start":2010,"year_end":2014,"statefip":30},{"age_group":'19-25',"year_start":2010,"year_end":2014,"statefip":1},{"age_group":'26-34',"year_start":2009,"year_end":2011,"statefip":2},{"age_group":'26-34',"year_start":2014,"year_end":2019,"statefip":30}])
+	wage_change_example = cps.wage_change_across_years(2009,2012,'26-34',1)
 	wage_change_frame_example = cps.frames_wage_change_across_years(example_frames_to_merge,'year_start','year_end','age_group','statefip')
 	print(wage_change_frame_example)
 	exit()

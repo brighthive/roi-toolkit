@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from modules import cps_loader
 
 def dataframe_groups_to_ndarray(dataframe, groupby_columns, value_to_groups):
 	grouped = dataframe.groupby(groupby_columns)[value_to_groups].apply(lambda x: np.array(x.values))
@@ -57,12 +58,22 @@ class Theil_T:
 		ratio = second_term / (first_term + second_term)
 		return ratio
 
+class Earnings_Premium:
+	def calculate(dataframe, earnings_before_column, earnings_after_column, start_year_column, end_year_column, age_at_start, statefip):
+		cps = cps_loader.CPS_Ops()
+		dataframe['age_group_at_start'] = pd.cut(dataframe[age_at_start], bins=[0,18,25,34,54,64,150], right=True, labels=['18 and under','19-25','26-34','35-54','55-64','65+']).astype(str)
+		dataframe['raw_earnings_change'] = dataframe[earnings_after_column] - dataframe[earnings_before_column]
+		dataframe['years_in_program'] = dataframe[end_year_column] - dataframe[start_year_column]
+		wage_change = cps.frames_wage_change_across_years(dataframe, start_year_column, end_year_column, 'age_group_at_start', statefip)
+		wage_change['earnings_premium'] = wage_change['raw_earnings_change'] - wage_change['wage_change']
+		return(wage_change)
+
 if __name__ == "__main__":
 	test_microdata = pd.read_csv("data/test_microdata.csv")
-	print(test_microdata)
+	premium_calc = Earnings_Premium.calculate(test_microdata, 'earnings_start', 'earnings_end', 'program_start', 'program_end','age','state')
+
+	print(premium_calc)
 	exit()
-	#mean_along_axes = Supporting.group_aggregation(test_microdata, ['race','gender'],'data','mean')
-	#sum_along_axes = Supporting.group_aggregation(test_microdata, ['race','gender'],'data','sum')
 
 	#x = abs(np.random.uniform(0,100,100000))
 	x = np.concatenate([np.repeat(3,1000), np.repeat(3,1000)])
@@ -70,6 +81,3 @@ if __name__ == "__main__":
 	z = np.array([x,y])
 	answer = Theil_T.Calculate_Ratio(z)
 	print(answer)
-	exit()
-	theil = Theil_T.theil_within_group(x)
-	print(theil)
