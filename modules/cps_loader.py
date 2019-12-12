@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from macrostats import *
+from macrostats import BLS_API
 from datetime import date
 
 """
@@ -30,7 +30,7 @@ class CPS_Extract_Data:
 	(ASECWT is included automatically)
 
 	"""
-	filepath_to_csv = "../data/cps/cps_00024.csv"
+	filepath_to_csv = "data/cps/cps_00024.csv"
 
 class CPS_Ops(object):
 	"""
@@ -42,7 +42,7 @@ class CPS_Ops(object):
 	"""
 	def __init__(self):
 		self.microdata = pd.read_csv(CPS_Extract_Data.filepath_to_csv)
-		self.microdata['age_group'] = pd.cut(self.microdata['AGE'], bins=[0,18,25,34,54,64,150], right=True).astype(str)
+		self.microdata['age_group'] = pd.cut(self.microdata['AGE'], bins=[0,18,25,34,54,64,150], right=True, labels=['<18','19-24','25-34','35-54','55-64','65+']).astype(str)
 		self.microdata['hs_education_at_most'] = self.microdata['EDUC'] < 80
 		self.microdata.loc[self.microdata.INCWAGE > 9999998, 'INCWAGE'] = np.nan
 		self.cpi_adjustment_factor = BLS_API.get_cpi_adjustment(1999,date.today().year) # CPS data is converted into 1999 base
@@ -68,6 +68,12 @@ class CPS_Ops(object):
 		return(wage_change)
 
 	def frames_wage_change_across_years(self, ind_frame, start_year_column, end_year_column, age_group_start_column, statefip_column):
+		print(ind_frame[start_year_column].unique)
+		print(ind_frame[age_group_start_column].unique)
+		print(ind_frame[statefip_column].unique)
+		print(self.all_mean_wages['YEAR'].unique)
+		print(self.all_mean_wages['age_group'].unique)
+		print(self.all_mean_wages['STATEFIP'].unique)
 		merged_start = ind_frame.merge(self.all_mean_wages, left_on=[start_year_column, age_group_start_column, statefip_column], right_on=['YEAR','age_group','STATEFIP'], how='left')
 		merged_both = merged_start.merge(self.all_mean_wages, left_on=[end_year_column, age_group_start_column, statefip_column], right_on=['YEAR','age_group','STATEFIP'], how='left', suffixes=('_start','_end'))
 		merged_both['wage_change'] = merged_both['mean_INCWAGE_end'] - merged_both['mean_INCWAGE_start']
