@@ -117,6 +117,20 @@ class BLS_API:
 		adjustment = end_cpi/start_cpi
 		return(adjustment)
 
+	def get_cpi_adjustment_range(start_year, end_year):
+		"""
+		This is identical to the above function except it returns the CPI indices for the given range.
+		Remember - it takes a MAXIMUM of twenty years!
+
+		Again - returning January measurements only
+		"""
+		series_id = BLS_API.get_cpi()
+		series = BLS_API.get_series(series_id, start_year, end_year)
+		series_frame = BLS_API.parse_api_response(series)
+		series_frame_reduced = series_frame[series_frame.periodName == "January"].rename(columns={"value":"cpi"})[['year','cpi']]
+
+		return(series_frame_reduced)
+
 class Calculations:
 	"""
 	Functions that take in dataframes produced by the BLS API and calculate statistics that will feed into ROI metrics.
@@ -194,7 +208,7 @@ class Calculations:
 
 if __name__ == "__main__":
 
-	cpi_data = BLS_API.get_cpi_adjustment(2000,2019)
+	cpi_data = BLS_API.get_cpi_adjustment_range(2000,2019)
 	print(cpi_data)
 	exit()
 	
