@@ -46,7 +46,7 @@ class CPS_Ops(object):
 		self.microdata['age_group'] = pd.cut(self.microdata['AGE'], bins=[0,18,25,34,54,64,150], right=True, labels=['18 and under','19-25','26-34','35-54','55-64','65+']).astype(str)
 		self.microdata['hs_education_at_most'] = self.microdata['EDUC'] < 80
 		self.microdata.loc[self.microdata.INCWAGE > 9999998, 'INCWAGE'] = np.nan
-		self.cpi_adjustment_factor = BLS_API.get_cpi_adjustment(1999,date.today().year) # CPS data is converted into 1999 base
+		self.cpi_adjustment_factor = BLS_API.get_cpi_adjustment(1999,date.today().year) # CPS data is converted into 1999 base, and then (below) we convert it into present-year dollars
 		self.microdata['INCWAGE_99'] = self.microdata['INCWAGE'] * self.microdata['CPI99'] * self.cpi_adjustment_factor
 		self.hs_grads_only = self.microdata[self.microdata.hs_education_at_most == 1]
 		self.get_all_mean_wages()
@@ -68,9 +68,13 @@ class CPS_Ops(object):
 		wage_change = wage_end - wage_start
 		return(wage_change)
 
-	def frames_wage_change_across_years(self, ind_frame, start_year_column, end_year_column, age_group_start_column, statefip_column):
-		merged_start = ind_frame.merge(self.all_mean_wages, left_on=[start_year_column, age_group_start_column, statefip_column], right_on=['YEAR','age_group','STATEFIP'], how='left')
-		merged_both = merged_start.merge(self.all_mean_wages, left_on=[end_year_column, age_group_start_column, statefip_column], right_on=['YEAR','age_group','STATEFIP'], how='left', suffixes=('_start','_end'))
+	def frames_wage_change_across_years(self, ind_frame, start_year_column, end_year_column, age_group_start_column, statefip_column, hsgrads_only = True):
+		if (hsgrads_only == False):
+			cps_frame = self.all_mean_wages
+		else:
+			cps_frame = self.hs_grads_mean_wages
+		merged_start = ind_frame.merge(cps_frame, left_on=[start_year_column, age_group_start_column, statefip_column], right_on=['YEAR','age_group','STATEFIP'], how='left')
+		merged_both = merged_start.merge(cps_frame, left_on=[end_year_column, age_group_start_column, statefip_column], right_on=['YEAR','age_group','STATEFIP'], how='left', suffixes=('_start','_end'))
 		merged_both['wage_change'] = merged_both['mean_INCWAGE_end'] - merged_both['mean_INCWAGE_start']
 		return(merged_both)
 

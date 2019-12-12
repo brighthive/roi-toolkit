@@ -3,6 +3,7 @@ import json
 import pandas as pd # using pandas here for the sake of (1) familiarity and (2) ease of extensibility
 import numpy as np
 import os
+from datetime import date
 from . import settings
 
 """
@@ -132,6 +133,15 @@ class BLS_API:
 
 		return(series_frame_reduced)
 
+	def cpi_adjust_frame(frame_, wage_column, wage_year_column):
+		year = date.today.year()
+		adjustment_frame = BLS_API.get_cpi_adjustment_range(year - 20, year)
+		current_year_cpi = adjustment_frame.loc[adjustment_frame.year == year, 'cpi'].iat[0]
+		adjusted_frame = frame_.merge(adjustment_frame, left_on=wage_year_column, right_on='year', how='left')
+		adjusted_frame['adjustment_factor'] = current_year_cpi/cpi
+		adjusted_frame['adjusted_wage'] = adjusted_frame['adjustment_factor'] * adjusted_frame[wage_column]
+		return adjusted_frame
+
 class Calculations:
 	"""
 	Functions that take in dataframes produced by the BLS API and calculate statistics that will feed into ROI metrics.
@@ -208,6 +218,7 @@ class Calculations:
 
 
 if __name__ == "__main__":
+	#### examples
 
 	cpi_data = BLS_API.get_cpi_adjustment_range(2000,2019)
 	print(cpi_data)
