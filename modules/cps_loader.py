@@ -79,6 +79,9 @@ class CPS_Ops(object):
 		merged_both['wage_change'] = merged_both['mean_INCWAGE_end'] - merged_both['mean_INCWAGE_start']
 		return(merged_both)
 
+	def hsgrad_wage_projections(self):
+		return None
+
 if __name__ == "__main__":
 	
 	cps = CPS_Ops()
