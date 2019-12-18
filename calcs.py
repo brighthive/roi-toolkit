@@ -64,7 +64,13 @@ class Theil_T:
 
 	Please note that the Theil index takes only positive values!
 
-	# Reference: ?
+	Reference
+	-----------
+	https://seer.cancer.gov/help/hdcalc/inference-methods/individual-level-survey-sample-1/measures-of-relative-disparity/theil-index-t
+
+	https://utip.lbj.utexas.edu/papers/utip_14.pdf
+
+	https://www.usi.edu/media/3654811/Analysis-of-Inequality.pdf
 
 	"""
 	def theil_within_group(vector_of_values):
@@ -183,12 +189,12 @@ class Theil_T:
 		return ratio
 
 class Earnings_Premium:
-		"""
-		Methods for calculating the earnings premium and variations thereof.
-		The earnings premium is interpretable as the expected increase in earnings an incoming student can expect at various intervals at the graduation from a program.
-		It's calculated by taking the difference between pre- and post-program earnings and correcting for trend.
-		Trend is calculated using CPS data for the change in average earned income for individuals in (a) a given age group with (b) a given qualification
-		"""
+	"""
+	Methods for calculating the earnings premium and variations thereof.
+	The earnings premium is interpretable as the expected increase in earnings an incoming student can expect at various intervals at the graduation from a program.
+	It's calculated by taking the difference between pre- and post-program earnings and correcting for trend.
+	Trend is calculated using CPS data for the change in average earned income for individuals in (a) a given age group with (b) a given qualification
+	"""
 	def calculate(dataframe, earnings_before_column, earnings_after_column, start_year_column, end_year_column, age_at_start, statefip):
 		cps = cps_loader.CPS_Ops()
 		dataframe['age_group_at_start'] = pd.cut(dataframe[age_at_start], bins=[0,18,25,34,54,64,150], right=True, labels=['18 and under','19-25','26-34','35-54','55-64','65+']).astype(str)
