@@ -43,11 +43,13 @@ class CPS_Ops(object):
 		self.get_hs_grads_mean_wages()
 
 	def get_all_mean_wages(self):
+		# Return a dataframe containing mean wages by year, state and age group
 		mean_wages = self.microdata.groupby(['YEAR','STATEFIP','age_group']).apply(lambda x: pd.Series({"mean_INCWAGE":np.sum(x['INCWAGE_99'] * x['ASECWT'])/np.sum(x['ASECWT'])})).reset_index()
 		self.all_mean_wages = mean_wages
 		return None
 
 	def get_hs_grads_mean_wages(self):
+		# Return a dataframe containing mean wages for high school graduates (maximum ed) by year, state and age group
 		mean_wages = self.hs_grads_only.groupby(['YEAR','STATEFIP','age_group']).apply(lambda x: pd.Series({"mean_INCWAGE":np.sum(x['INCWAGE_99'] * x['ASECWT'])/np.sum(x['ASECWT'])})).reset_index()
 		self.hs_grads_mean_wages = mean_wages
 		return None
@@ -55,18 +57,87 @@ class CPS_Ops(object):
 	def get_mean_wage_by_ed_level(self, prereq_educ_level, program_educ_level, statefip):
 		"""
 		Calculate mean wages for individuals in a given state who are above a certain education level but below another one. Currently calculated for 2019 only.
+
+		Reference:
+		-----------
+		CPS education codes
+
+		Parameters:
+		-----------
+		prereq_educ_level : str
+			CPS education recode code for the lower-bound education level
+
+		program_educ_level : str
+			CPS education recode code for the upper-bound education level
+
+		statefip : str
+			End year and month of the period over which we want to identify $ wage change
+
+		Returns
+		-------
+		A single number indicating the mean wage across the dataset for this group of people.
 		"""
 		max_ed = self.microdata[(self.microdata.EDUC >= prereq_educ_level) & (self.microdata.EDUC < program_educ_level) & (self.microdata.STATEFIP == statefip) & (self.microdata.YEAR == 2019)]
 		mean_wage = np.sum(max_ed["INCWAGE_99"] * max_ed["ASECWT"]) / np.sum(max_ed["ASECWT"])
 		return(mean_wage)
 
 	def wage_change_across_years(self, start_year, end_year, age_group_at_start, statefip):
+		"""
+		Calculate mean wage change across years for individuals in a given state and age group.
+
+		Parameters:
+		-----------
+		start_year : int
+			CPS education recode code for the lower-bound education level
+
+		end_year : int
+			CPS education recode code for the upper-bound education level
+
+		age_group_at_start : str
+			One of ['18 and under','19-25','26-34','35-54','55-64','65+']. These are divvied up in the CPS data at init of the CPS_Ops object.
+
+		statefip : str
+			State FIPS code, e.g. "08"
+
+		Returns
+		-------
+		A single number indicating the mean wage across the dataset for this group of people.
+		"""
 		wage_start = self.all_mean_wages.loc[(self.all_mean_wages['YEAR'] == start_year) & (self.all_mean_wages['age_group'] == age_group_at_start) & (self.all_mean_wages['STATEFIP'] == statefip), 'mean_INCWAGE'].iat[0]
 		wage_end = self.all_mean_wages.loc[(self.all_mean_wages['YEAR'] == end_year) & (self.all_mean_wages['age_group'] == age_group_at_start) & (self.all_mean_wages['STATEFIP'] == statefip), 'mean_INCWAGE'].iat[0]
 		wage_change = wage_end - wage_start
 		return(wage_change)
 
 	def frames_wage_change_across_years(self, ind_frame, start_year_column, end_year_column, age_group_start_column, statefip_column, hsgrads_only = True):
+		"""
+		Given a dataframe with individual microdata, add a new column describing the change in state-level wages
+		for people in their age group across the provided time frame (e.g. time spent in educational/training program).
+
+		Parameters:
+		-----------
+		ind_frame : Pandas DataFrame
+			Dataframe containing microdata for individuals
+
+		start_year_column : str
+			Name of column containing individuals' years of entry into educational programs
+
+		end_year_column : str
+			Name of column containing individuals' years of exit from educational programs
+
+		age_group_start_column : str
+			Name of column containing age groups.
+			These are in ['18 and under','19-25','26-34','35-54','55-64','65+'].
+
+		statefip_column : str
+			Name of column contianing state FIPS codes
+
+		hsgrads_only : boolean
+			If true, we correct for macro trends using only data from high school graduates (max education)
+
+		Returns
+		-------
+		A dataframe containing a new column ("wage_change") which expresses the difference between pre- and post-program earnings corrected for trend.
+		"""
 		if (hsgrads_only == False):
 			cps_frame = self.all_mean_wages
 		else:
