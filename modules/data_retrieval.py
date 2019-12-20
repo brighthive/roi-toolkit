@@ -3,6 +3,7 @@ from requests_oauthlib import OAuth2Session
 from urllib.parse import urljoin
 from datetime import datetime
 import os
+import pandas as pd
 import json
 
 # API Docs
@@ -28,7 +29,7 @@ def get_token():
 			current_token = data['current_token']
 			last_token_retrieval = data['last_token_retrieval']
 
-			if current_time - last_token_retrieval < 86400:
+			if current_time - last_token_retrieval < 600:
 				print(last_token_retrieval)
 				return current_token
 			else:
@@ -53,14 +54,22 @@ def make_request(endpoint, token, base_url=Credentials.api_base_url, data = {}):
 	r = requests.get(full_url, headers=headers, data=json.dumps(data))
 	content = r.content
 	parsed_content = json.loads(content)
-	return content
+	return parsed_content
 
-def get_programs():
-	return None
+def make_request(endpoint, token, base_url=Credentials.api_base_url, data = {}):
+	headers = {"Authorization": "Bearer {}".format(token)}
+	full_url = urljoin(base_url, endpoint)
+	r = requests.get(full_url, headers=headers, data=json.dumps(data))
+	content = r.content
+	parsed_content = json.loads(content)
+	links = parsed_content["links"]
+	# paginate here
+	return parsed_content, links
+
 
 if __name__ == "__main__":
 	token = get_token()
-	programs = make_request('programs', token)
+	programs, links = make_request('programs', token)
 	program_prerequisites = make_request('program_prerequisites', token)
-	print(token)
 	print(programs)
+	print(links)
