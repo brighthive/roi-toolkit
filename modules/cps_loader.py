@@ -3,8 +3,6 @@ import numpy as np
 from datetime import date
 from . import settings
 from .macrostats import BLS_API
-#from macrostats import BLS_API
-#import settings
 
 """
 TO do here:
@@ -37,7 +35,7 @@ class CPS_Ops(object):
 		self.microdata['age_group'] = pd.cut(self.microdata['AGE'], bins=[0,18,25,34,54,64,150], right=True, labels=['18 and under','19-25','26-34','35-54','55-64','65+']).astype(str)
 		self.microdata['hs_education_at_most'] = self.microdata['EDUC'] < 80
 		self.microdata.loc[self.microdata.INCWAGE > 9999998, 'INCWAGE'] = np.nan
-		self.cpi_adjustment_factor = BLS_API.get_cpi_adjustment(1999,self.base_year) # CPS data is converted into 1999 base, and then (below) we convert it into present-year dollars
+		self.cpi_adjustment_factor = 1.5341408621736492#BLS_API.get_cpi_adjustment(1999,self.base_year) # CPS data is converted into 1999 base, and then (below) we convert it into present-year dollars
 		self.microdata['INCWAGE_99'] = self.microdata['INCWAGE'] * self.microdata['CPI99'] * self.cpi_adjustment_factor
 		self.hs_grads_only = self.microdata[self.microdata.hs_education_at_most == 1]
 		self.get_all_mean_wages()
@@ -81,6 +79,35 @@ class CPS_Ops(object):
 		max_ed = self.microdata[(self.microdata.EDUC >= prereq_educ_level) & (self.microdata.EDUC < program_educ_level) & (self.microdata.STATEFIP == statefip) & (self.microdata.YEAR == 2019)]
 		mean_wage = np.sum(max_ed["INCWAGE_99"] * max_ed["ASECWT"]) / np.sum(max_ed["ASECWT"])
 		return(mean_wage)
+
+	def rudimentary_hs_baseline(self, statefip):
+		first_year = self.base_year - 10
+		final_year = self.base_year
+
+		baselines = self.microdata[self.microdata.STATEFIP == statefip]
+
+		year1_hs_grads_young = baselines[(baselines.YEAR == first_year) & (baselines.AGE >= 18) & (baselines.AGE <= 24) & (baselines.EDUC >= 73) & (baselines.EDUC < 91)]
+		year10_hs_grads_old = baselines[(baselines.YEAR == final_year) & (baselines.AGE >= 28) & (baselines.AGE <= 34) & (baselines.EDUC >= 73) & (baselines.EDUC < 91)]
+		year10_hs_grads_young = baselines[(baselines.YEAR == final_year) & (baselines.AGE >= 18) & (baselines.AGE <= 24) & (baselines.EDUC >= 73) & (baselines.EDUC < 91)]
+
+		# average wage for 18-24 HS graduates 10 years ago
+		early_wage = np.sum(year1_hs_grads_young["INCWAGE_99"] * year1_hs_grads_young["ASECWT"]) / np.sum(year1_hs_grads_young["ASECWT"])
+
+		# average wage for 28-34 HS graduates last year
+		late_wage = np.sum(year10_hs_grads_old["INCWAGE_99"] * year10_hs_grads_old["ASECWT"]) / np.sum(year10_hs_grads_old["ASECWT"])
+
+		# average wage for 18-24 HS graduates last year
+		recent_wage = np.sum(year10_hs_grads_young["INCWAGE_99"] * year10_hs_grads_young["ASECWT"]) / np.sum(year10_hs_grads_young["ASECWT"])
+
+		annualized_wage_growth = (late_wage / early_wage)**(1/10) - 1
+
+		year1_projection = recent_wage * ((1+annualized_wage_growth)**1)
+		year5_projection = recent_wage * ((1+annualized_wage_growth)**5)
+		year10_projection = recent_wage * ((1+annualized_wage_growth)**10)
+
+		wage_projections = {"year1":year1_projection, "year5":year5_projection, "year10":year10_projection}
+
+		return(wage_projections)
 
 	def wage_change_across_years(self, start_year, end_year, age_group_at_start, statefip):
 		"""
@@ -154,6 +181,9 @@ class CPS_Ops(object):
 if __name__ == "__main__":
 	
 	cps = CPS_Ops()
+
+	baselines = cps.get_wage_baselines(8)
+	print(baselines)
 
 	hs_wages = cps.get_mean_wage_by_ed_level(73, 111, 8)
 	ba_wages = cps.get_mean_wage_by_ed_level(111, 123, 8)
