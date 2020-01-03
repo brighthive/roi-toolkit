@@ -32,11 +32,12 @@ class CPS_Ops(object):
 	given a data given multiple time periods, age groups, etc.
 	"""
 	def __init__(self):
+		self.base_year = date.today().year - 1
 		self.microdata = pd.read_csv(settings.File_Locations.cps_extract)
 		self.microdata['age_group'] = pd.cut(self.microdata['AGE'], bins=[0,18,25,34,54,64,150], right=True, labels=['18 and under','19-25','26-34','35-54','55-64','65+']).astype(str)
 		self.microdata['hs_education_at_most'] = self.microdata['EDUC'] < 80
 		self.microdata.loc[self.microdata.INCWAGE > 9999998, 'INCWAGE'] = np.nan
-		self.cpi_adjustment_factor = BLS_API.get_cpi_adjustment(1999,date.today().year) # CPS data is converted into 1999 base, and then (below) we convert it into present-year dollars
+		self.cpi_adjustment_factor = BLS_API.get_cpi_adjustment(1999,self.base_year) # CPS data is converted into 1999 base, and then (below) we convert it into present-year dollars
 		self.microdata['INCWAGE_99'] = self.microdata['INCWAGE'] * self.microdata['CPI99'] * self.cpi_adjustment_factor
 		self.hs_grads_only = self.microdata[self.microdata.hs_education_at_most == 1]
 		self.get_all_mean_wages()
