@@ -31,27 +31,27 @@ class Supporting:
 	Class for miscellaneous supporting calculation functions.
 	"""
 	def group_aggregation(dataframe, aggregation_category_list, variable_to_aggregate, aggregation_method):
-	"""
-	This method is just a shortener for a groupby aggregation.
+		"""
+		This method is just a shortener for a groupby aggregation.
 
-	Parameters:
-	-----------
-	dataframe : Pandas DataFrame
-		Dataframe containing microdata
+		Parameters:
+		-----------
+		dataframe : Pandas DataFrame
+			Dataframe containing microdata
 
-	aggregation_category_list : list(str)
-		list of column names e.g. "gender" or "race"
+		aggregation_category_list : list(str)
+			list of column names e.g. "gender" or "race"
 
-	variable_to_aggregate : str
-		Column name containing the value which will be aggregated
+		variable_to_aggregate : str
+			Column name containing the value which will be aggregated
 
-	aggregation_method: str
-		Function name e.g. "mean" or "sum." Must be a legit function!
+		aggregation_method: str
+			Function name e.g. "mean" or "sum." Must be a legit function!
 
-	Returns
-	-------
-	A dataframe with column for the aggregated value. If method is X and original value is Y, the aggregated column is X_Y.
-	"""
+		Returns
+		-------
+		A dataframe with column for the aggregated value. If method is X and original value is Y, the aggregated column is X_Y.
+		"""
 		aggregated_name = "{}_{}".format(aggregation_method, variable_to_aggregate)
 		aggregated = test_microdata.groupby(aggregation_category_list)[variable_to_aggregate].aggregate(aggregation_method).reset_index().rename(columns={variable_to_aggregate:aggregated_name})		
 		return aggregated
@@ -113,27 +113,31 @@ class Theil_T:
 		s_i = (N_i/N) * (x_i_bar/mu)
 		return s_i
 
-	def first_term(array_of_groups):
+	def first_term(list_of_groups):
 		"""
 		First term (sum of within-group inequalities) in the Theil index formula
 		
 		Parameters:
 		-----------
-		array_of_groups : numpy multidimensional vector
+		list_of_groups : list of numpy arrays
 			Array[N] of arrays representing N subgroups
 
 		Returns
 		-------
 		Scalar representing the first term value of the Theil index formula
 		"""
-		N = array_of_groups.size
-		mu = np.mean(array_of_groups)
-		T_i = np.apply_along_axis(Theil_T.theil_within_group, 1, array_of_groups)
-		s_i = np.apply_along_axis(Theil_T.s_i, 1, array_of_groups, N=N, mu=mu)
+		full_population = np.concatenate(list_of_groups)
+		N = len(full_population)
+		mu = np.mean(full_population)
+		T_i = np.array([Theil_T.theil_within_group(group) for group in list_of_groups])
+		s_i = np.array([Theil_T.s_i(group, N=N, mu=mu) for group in list_of_groups])
+		#T_i = np.apply_along_axis(Theil_T.theil_within_group, 1, array_of_groups)
+		#s_i = np.apply_along_axis(Theil_T.s_i, 1, array_of_groups, N=N, mu=mu)
 		first_term = np.sum(T_i * s_i)
 		return first_term
 
-	def second_term(array_of_groups):
+	# FIX THIS SHIT UP
+	def second_term(list_of_groups):
 		"""
 		Second term (sum of cross-group inequalities) in the Theil index formula
 		
@@ -146,10 +150,11 @@ class Theil_T:
 		-------
 		Scalar representing the second term value of the Theil index formula
 		"""
-		N = array_of_groups.size
-		mu = np.mean(array_of_groups)
-		s_i = np.apply_along_axis(Theil_T.s_i, 1, array_of_groups, N=N, mu=mu)
-		x_i = np.apply_along_axis(np.mean, 1, array_of_groups)
+		full_population = np.concatenate(list_of_groups)
+		N = len(full_population)
+		mu = np.mean(full_population)
+		s_i = np.array([Theil_T.s_i(group, N=N, mu=mu) for group in list_of_groups])
+		x_i = np.array([np.mean(group) for group in list_of_groups])
 		second_term = np.sum(s_i * np.log(x_i / mu))
 		return second_term
 
@@ -166,6 +171,8 @@ class Theil_T:
 		-------
 		Scalar representing the Theil index
 		"""
+		print(Theil_T.first_term(array_of_groups))
+		print(Theil_T.second_term(array_of_groups))
 		Index = Theil_T.first_term(array_of_groups) + Theil_T.second_term(array_of_groups)
 		return Index
 
@@ -188,6 +195,8 @@ class Theil_T:
 		ratio = second_term / (first_term + second_term)
 		return ratio
 
+
+
 class Earnings_Premium:
 	"""
 	Methods for calculating the earnings premium and variations thereof.
@@ -205,15 +214,31 @@ class Earnings_Premium:
 		return(wage_change)
 
 if __name__ == "__main__":
+
+	'''
+	cps = cps_loader.CPS_Ops()
+	model = cps.fit_hs_model()
+	predicted_wages = cps.predict_hs_wages([2010,2019],[1,10])
+	exit()
+	print(baselines)
+
+
+	#baselines = cps.rudimentary_hs_baseline(8)
+
+	exit()
 	test_microdata = pd.read_csv("data/test_microdata.csv")
 	premium_calc = Earnings_Premium.calculate(test_microdata, 'earnings_start', 'earnings_end', 'program_start', 'program_end','age','state')
 
 	print(premium_calc)
 	exit()
-
+	'''
 	#x = abs(np.random.uniform(0,100,100000))
-	x = np.concatenate([np.repeat(3,1000), np.repeat(3,1000)])
-	y = np.concatenate([np.repeat(3.1,1000), np.repeat(3.1,1000)])
-	z = np.array([x,y])
-	answer = Theil_T.Calculate_Ratio(z)
-	print(answer)
+	x = np.concatenate([np.repeat(3,1000), np.repeat(10,2000)])
+	y = np.concatenate([np.repeat(3,1000), np.repeat(20,10000)])
+	z = [x,y]
+	answer = Theil_T.Calculate_Index(z)
+
+
+	# right now the within group is N x the overall index
+
+
