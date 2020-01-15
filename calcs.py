@@ -131,8 +131,6 @@ class Theil_T:
 		mu = np.mean(full_population)
 		T_i = np.array([Theil_T.theil_within_group(group) for group in list_of_groups])
 		s_i = np.array([Theil_T.s_i(group, N=N, mu=mu) for group in list_of_groups])
-		#T_i = np.apply_along_axis(Theil_T.theil_within_group, 1, array_of_groups)
-		#s_i = np.apply_along_axis(Theil_T.s_i, 1, array_of_groups, N=N, mu=mu)
 		first_term = np.sum(T_i * s_i)
 		return first_term
 
@@ -171,8 +169,7 @@ class Theil_T:
 		-------
 		Scalar representing the Theil index
 		"""
-		print(Theil_T.first_term(array_of_groups))
-		print(Theil_T.second_term(array_of_groups))
+
 		Index = Theil_T.first_term(array_of_groups) + Theil_T.second_term(array_of_groups)
 		return Index
 
@@ -195,6 +192,140 @@ class Theil_T:
 		ratio = second_term / (first_term + second_term)
 		return ratio
 
+class Theil_L:
+	"""
+	Class provides methods for calculating individual terms in the Theil L index, as well as
+	(1) a function for calculating the index itself and
+	(2) a function calculating a ratio denoting the proportion of inequality accounted for by cross-group inequality
+
+	Please note that the Theil index takes only positive values!
+
+	Reference
+	-----------
+	https://seer.cancer.gov/help/hdcalc/inference-methods/individual-level-survey-sample-1/measures-of-relative-disparity/theil-index-t
+
+	https://utip.lbj.utexas.edu/papers/utip_14.pdf
+
+	https://www.usi.edu/media/3654811/Analysis-of-Inequality.pdf
+
+	"""
+	def theil_within_group(vector_of_values):
+		"""
+		T_i in the Theil index expression
+		
+		Parameter - Numpy vector or array of values
+		Returns - Scalar (float)
+
+		"""
+		x = vector_of_values # for readability
+		N = len(x)
+		mu = np.mean(x)
+		mu_over_xi = mu / x
+		ln_mu_over_xi = np.log(mu_over_xi)
+		theil = (1/N)*np.sum(ln_mu_over_xi)
+		return theil
+
+	def s_i(array, N):
+		"""
+		s_i in the Theil index expression
+		
+		Parameters:
+		-----------
+		array : numpy vector or array
+			Values of variable
+
+		N : float
+			size of population
+
+		mu : float
+			Average value of variable across population
+
+		Returns
+		-------
+		Float
+		"""
+		N_i = len(array)
+		s_i = (N_i/N)
+		return s_i
+
+	def first_term(list_of_groups):
+		"""
+		First term (sum of within-group inequalities) in the Theil index formula
+		
+		Parameters:
+		-----------
+		list_of_groups : list of numpy arrays
+			Array[N] of arrays representing N subgroups
+
+		Returns
+		-------
+		Scalar representing the first term value of the Theil index formula
+		"""
+		full_population = np.concatenate(list_of_groups)
+		N = len(full_population)
+		mu = np.mean(full_population)
+		L_i = np.array([Theil_L.theil_within_group(group) for group in list_of_groups])
+		s_i = np.array([Theil_L.s_i(group, N=N) for group in list_of_groups])
+		first_term = np.sum(L_i * s_i)
+		return first_term
+
+	# FIX THIS SHIT UP
+	def second_term(list_of_groups):
+		"""
+		Second term (sum of cross-group inequalities) in the Theil index formula
+		
+		Parameters:
+		-----------
+		array_of_groups : numpy multidimensional vector
+			Array[N] of arrays representing N subgroups
+
+		Returns
+		-------
+		Scalar representing the second term value of the Theil index formula
+		"""
+		full_population = np.concatenate(list_of_groups)
+		N = len(full_population)
+		mu = np.mean(full_population)
+		s_i = np.array([Theil_L.s_i(group, N=N) for group in list_of_groups])
+		x_i = np.array([np.mean(group) for group in list_of_groups])
+		second_term = np.sum(s_i * np.log(mu / x_i))
+		return second_term
+
+	def Calculate_Index(array_of_groups):
+		"""
+		The actual Theil Index: sum of within-group and cross-group inequality
+		
+		Parameters:
+		-----------
+		array_of_groups : numpy multidimensional vector
+			Array[N] of arrays representing N subgroups
+
+		Returns
+		-------
+		Scalar representing the Theil index
+		"""
+
+		Index = Theil_L.first_term(array_of_groups) + Theil_L.second_term(array_of_groups)
+		return Index
+
+	def Calculate_Ratio(array_of_groups):
+		"""
+		Ratio between second term of index (cross-group inequality) and the full index.
+		Roughly interpretable as the portion of inequality that is accounted for by cross-group inequality.
+		
+		Parameters:
+		-----------
+		array_of_groups : numpy multidimensional vector
+			Array[N] of arrays representing N subgroups
+
+		Returns
+		-------
+		Scalar representing the ratio
+		"""
+		first_term = Theil_L.first_term(array_of_groups)
+		second_term = Theil_L.second_term(array_of_groups)
+		ratio = second_term / (first_term + second_term)
+		return ratio
 
 
 class Earnings_Premium:
@@ -234,10 +365,14 @@ if __name__ == "__main__":
 	'''
 	#x = abs(np.random.uniform(0,100,100000))
 	x = np.concatenate([np.repeat(3,1000), np.repeat(10,2000)])
-	y = np.concatenate([np.repeat(3,1000), np.repeat(20,10000)])
-	z = [x,y]
-	answer = Theil_T.Calculate_Index(z)
+	y = np.concatenate([np.repeat(3,1000), np.repeat(10,10000)])
 
+	z = [x,y]
+	answer = Theil_L.Calculate_Index(z)
+	print(answer)
+
+	# decomposition background
+	# http://siteresources.worldbank.org/PGLP/Resources/PMch6.pdf
 
 	# right now the within group is N x the overall index
 
