@@ -36,9 +36,16 @@ class CPS_Ops(object):
 		self.microdata = pd.read_csv(settings.File_Locations.cps_extract)
 		self.microdata['age_group'] = pd.cut(self.microdata['AGE'], bins=[0,18,25,34,54,64,150], right=True, labels=['18 and under','19-25','26-34','35-54','55-64','65+']).astype(str)
 		self.microdata['hs_education_at_most'] = (self.microdata['EDUC'] >= 73) & (self.microdata['EDUC'] < 90) & (self.microdata['AGE'] >= 18)# & (self.microdata['AGE'] <= 38)
-		self.microdata.loc[self.microdata.INCWAGE > 9999998, 'INCWAGE'] = np.nan
 		self.cpi_adjustment_factor = 1.5341408621736492#BLS_API.get_cpi_adjustment(1999,self.base_year) # CPS data is converted into 1999 base, and then (below) we convert it into present-year dollars
+
+		# adjust total personal income
+		self.microdata.loc[self.microdata.INCTOT > 9999998, 'INCTOT'] = np.nan
+		self.microdata['INCTOT_99'] = self.microdata['INCTOT'] * self.microdata['CPI99'] * self.cpi_adjustment_factor
+
+		# adjust wages
+		self.microdata.loc[self.microdata.INCWAGE > 9999998, 'INCWAGE'] = np.nan
 		self.microdata['INCWAGE_99'] = self.microdata['INCWAGE'] * self.microdata['CPI99'] * self.cpi_adjustment_factor
+
 		self.hs_grads_only = self.microdata[self.microdata.hs_education_at_most == True]
 		self.get_all_mean_wages()
 		self.get_hs_grads_mean_wages()
@@ -183,16 +190,16 @@ class CPS_Ops(object):
 
 		"""
 		In Heckman's Mincer model, people with zero earnings are dropped: https://www.nber.org/papers/w13780.pdf
+		Better reference: https://www.nber.org/papers/w9732.pdf  -- see page 49 for sample information
 		"""
 
-		#data = self.hs_grads_only
-		data = self.microdata[(self.microdata.LABFORCE == 2) & (self.microdata.INCWAGE_99 > 0)]# & (self.microdata.hs_education_at_most == True)]
+		data = self.microdata[(self.microdata.INCTOT_99 > 0) & (self.microdata['AGE'] <= 65)]# & (self.microdata.hs_education_at_most == True)]
 
 		# recode years of schooling
 		data['years_of_schooling'] = pd.cut(self.microdata['EDUC'], bins=[0, 60, 73, 81, 92, 111, 123, 124, 125], right=True, labels=[10,12,14,13,16,18,19,20]).astype(int)
-		data['log_incwage'] = np.log(data['INCWAGE_99'])
+		data['log_inctot'] = np.log(data['INCTOT_99'])
 		data['work_experience'] = data['AGE'] - data['years_of_schooling'] - 6 # based on Heckman
-		model = smf.ols("INCWAGE_99 ~ C(EDUC) + work_experience + work_experience^2", data, missing='drop')
+		model = smf.ols("log_inctot ~ years_of_schooling + years_of_schooling:work_experience + work_experience + work_experience^2", data, missing='drop')
 		results = model.fit()
 		print(results.summary())
 		self.hs_model_results = results
