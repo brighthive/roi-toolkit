@@ -346,14 +346,15 @@ class Earnings_Premium:
 
 if __name__ == "__main__":
 
-	'''
+	
 	cps = cps_loader.CPS_Ops()
-	model = cps.fit_hs_model()
-	predicted_wages = cps.predict_hs_wages([2010,2019],[1,10])
+	model = cps.fit_mincer_model(36)
 	exit()
-	print(baselines)
+	predicted_wages = cps.predicted_wages([73,111],[4,10])
+	print(predicted_wages)
+	exit()	
 
-
+	'''
 	#baselines = cps.rudimentary_hs_baseline(8)
 
 	exit()
@@ -363,13 +364,16 @@ if __name__ == "__main__":
 	print(premium_calc)
 	exit()
 	'''
+
 	#x = abs(np.random.uniform(0,100,100000))
-	x = np.concatenate([np.repeat(3,1000), np.repeat(10,2000)])
-	y = np.concatenate([np.repeat(3,1000), np.repeat(10,10000)])
+	x = np.concatenate([np.repeat(1,1000), np.repeat(200,2000)])
+	y = np.concatenate([np.repeat(13,1000), np.repeat(2,10000)])
 
 	z = [x,y]
-	answer = Theil_L.Calculate_Index(z)
-	print(answer)
+	answer_T = Theil_T.Calculate_Ratio(z)
+	answer_L = Theil_L.Calculate_Ratio(z)
+	print(answer_T)
+	print(answer_L)
 
 	# decomposition background
 	# http://siteresources.worldbank.org/PGLP/Resources/PMch6.pdf
