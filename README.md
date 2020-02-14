@@ -1,4 +1,4 @@
-# SBIR-ROI
+# ROI Toolkit
 
 This repository contains scripts related to the ongoing ROI metrics project being piloted in Colorado. As of 12/5/2019 these scripts are for prototyping purposes only.
 
