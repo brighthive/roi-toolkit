@@ -185,29 +185,48 @@ class CPS_Ops(object):
 		merged_both['wage_change'] = merged_both['mean_INCWAGE_end'] - merged_both['mean_INCWAGE_start']
 		return(merged_both)
 
-	# ADDRESS THIS
-	# LINEAR REGRESSION SEEMS TO WORK HERE
-	def fit_mincer_model(self, statefip):
+
+	def fit_mincer_model(self, force_fit=False):
 
 		"""
-		In Heckman's Mincer model, people with zero earnings are dropped: https://www.nber.org/papers/w13780.pdf
-		Better reference: https://www.nber.org/papers/w9732.pdf  -- see page 49 for sample information
+		This function fits a modified Mincer model and saves the results. If results already exist,
+		by default this uses the existing fit model in data/models.
+
+		For reference, see:
+			- https://www.nber.org/papers/w13780.pdf
+			- https://www.nber.org/papers/w9732.pdf (see page 49 for sample information)
+
+		Mincer models are commonly used in educational economics as a way of estimating returns to schooling and experience.
+		As a fully predictive model of wages, they are of limited value (R2 ~ 0.15). This is because of individual-level
+		heterogeneity with regard to endowments and opportunities. However, in this context we use them simply to get the
+		following (fairly precisely estimated) coefficients:
+
+		1) years of schooling
+		2) interaction between work experience and years of schooling
+		3) work experience
+		4) work experience squared
+
+		The inclusion of the interaction term (2) and the quadratic term (4) are intended to capture the differential returns
+		to work experience across different levels of educational preparation (e.g. a marginal year of experience for a college grad
+		may have a higher return than for a high school grad) and the diminishing returns to experience (e.g. for some levels of
+		education, annual wages level off for late-career workers).
+
 		"""
 
 		# Check if a saved model exists. If it does, load and pass; if not, fit and pass
 
-		if (path.exists(settings.File_Locations.model_location)):
+		if (path.exists(settings.File_Locations.model_location) & force_fit == False):
 			self.mincer = sm.load(settings.File_Locations.model_location)
 			return(self)
 		else:
 			pass
 
-		data = self.microdata[(self.microdata.INCTOT_99 > 0) & (self.microdata['AGE'] <= 65)]# & (self.microdata.hs_education_at_most == True)]
+		data = self.microdata[(self.microdata.INCTOT_99 > 0) & (self.microdata['AGE'] <= 65)]
 
 		# recode years of schooling
 		data['years_of_schooling'] = pd.cut(self.microdata['EDUC'], bins=[0, 60, 73, 81, 92, 111, 123, 124, 125], right=True, labels=[10,12,14,13,16,18,19,20]).astype(int)
 		data['log_inctot'] = np.log(data['INCTOT_99'])
-		data['work_experience'] = data['AGE'] - data['years_of_schooling'] - 6 # based on Heckman
+		data['work_experience'] = data['AGE'] - data['years_of_schooling'] - 6 # based on Heckman's work (NBER above)
 		model = smf.ols("log_inctot ~ C(STATEFIP) + years_of_schooling + years_of_schooling:work_experience + work_experience + np.power(work_experience, 2)", data, missing='drop')
 		results = model.fit()
 		results.save(settings.File_Locations.model_location) # why is the model so big?
@@ -217,9 +236,37 @@ class CPS_Ops(object):
 
 		return(self)
 
-	# better calculations - figure out how to use!
-	# THIS SHOULD DEPEND ON AGE?
 	def mincer_based_wage_change(self, state, prior_education, current_age, starting_wage, years_passed):
+		"""
+		Given a state, a prior education level (CPS EDUC code), the current age of an individual, their wage
+		before entering an educational program, and the time they spent in the program, this function calculates
+		their counterfactual wage change, e.g. it calculates what their expected current wage would be if they had
+		not participated in the program.
+
+		It achieves this by using the relevant coefficients from the modified Mincer model fit in fit_mincer_model() above,
+		which approximate the value of an additional year of work experience given prior education and existing years
+		of work experience.
+
+		Parameters:
+		-----------
+		prior_education : int
+			Integer code describing individuals' prior education level
+			# see https://cps.ipums.org/cps-action/variables/EDUC#codes_section
+
+		current_age : int
+			Individuals' current age (post program)
+
+		starting_wage : float
+			Individuals' annual wage prior to starting educational program
+
+		years_passed : int
+			Program length, e.g. 2 years for an associate's degree
+
+		Returns
+		-------
+		float: the expected counterfactual wage change for an individual over the time they were in a program, in present-year dollars.
+
+		"""
 		schooling_coef = self.mincer.params['years_of_schooling']
 		schooling_x_exp_coef = self.mincer.params['years_of_schooling:work_experience']
 		exp_coef = self.mincer.params['work_experience']
@@ -242,13 +289,12 @@ class CPS_Ops(object):
 
 		return(counterfactual_wage_growth)
 
-	# ADDRESS THIS
-	def predicted_wages(self, EDUC, work_experience):
-		model = self.hs_model_results
-		X_to_predict = pd.DataFrame({"EDUC": EDUC, "work_experience":work_experience})
-		X_to_predict['years_of_schooling'] = pd.cut(X_to_predict['EDUC'], bins=[0, 60, 73, 81, 92, 111, 123, 124, 125], right=True, labels=[10,12,14,13,16,18,19,20]).astype(int)
-		predicted_wages = model.predict(exog=X_to_predict)
-		return(predicted_wages)
+		def calculate_earnings_premium_within_group(self, educ_levels, current_ages, starting_wages, years_passed):
+			"""
+				takes np arrays
+			"""
+			return(None)
+
 
 if __name__ == "__main__":
 	
