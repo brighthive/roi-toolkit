@@ -19,7 +19,10 @@ class File_Locations:
 	INCWAGE
 	STATEFIP
 	CPI99
+	INCTOT
 	(ASECWT is included automatically)
 
 	"""
-	cps_extract = os.path.join(dirname,"../data/cps/cps_00024.csv")
+	cps_extract = os.path.join(dirname,"../data/cps/cps_00027.csv")
+
+	model_location = os.path.join(dirname,"../data/models/mincer.pickle")

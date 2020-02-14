@@ -259,7 +259,7 @@ class BLS_API:
 
 		return(series_frame_reduced)
 
-	def cpi_adjust_frame(frame_, wage_column, wage_year_column, year=date.today.year()):
+	def cpi_adjust_frame(frame_, wage_column, wage_year_column, year=date.today().year):
 		"""
 		This adjusts all wages to the current year's wages by default (though it will do whatever you tell it to!)
 		It takes a frame and returns the original frame with the adjusted wages and the adjustment factors used.

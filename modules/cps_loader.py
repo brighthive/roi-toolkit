@@ -3,6 +3,9 @@ import numpy as np
 from datetime import date
 from . import settings
 from .macrostats import BLS_API
+import statsmodels.api as sm
+import statsmodels.formula.api as smf
+from os import path
 
 """
 TO do here:
@@ -33,11 +36,18 @@ class CPS_Ops(object):
 		self.base_year = date.today().year - 1
 		self.microdata = pd.read_csv(settings.File_Locations.cps_extract)
 		self.microdata['age_group'] = pd.cut(self.microdata['AGE'], bins=[0,18,25,34,54,64,150], right=True, labels=['18 and under','19-25','26-34','35-54','55-64','65+']).astype(str)
-		self.microdata['hs_education_at_most'] = self.microdata['EDUC'] < 80
-		self.microdata.loc[self.microdata.INCWAGE > 9999998, 'INCWAGE'] = np.nan
+		self.microdata['hs_education_at_most'] = (self.microdata['EDUC'] >= 73) & (self.microdata['EDUC'] < 90) & (self.microdata['AGE'] >= 18)# & (self.microdata['AGE'] <= 38)
 		self.cpi_adjustment_factor = 1.5341408621736492#BLS_API.get_cpi_adjustment(1999,self.base_year) # CPS data is converted into 1999 base, and then (below) we convert it into present-year dollars
+
+		# adjust total personal income
+		self.microdata.loc[self.microdata.INCTOT > 9999998, 'INCTOT'] = np.nan
+		self.microdata['INCTOT_99'] = self.microdata['INCTOT'] * self.microdata['CPI99'] * self.cpi_adjustment_factor
+
+		# adjust wages
+		self.microdata.loc[self.microdata.INCWAGE > 9999998, 'INCWAGE'] = np.nan
 		self.microdata['INCWAGE_99'] = self.microdata['INCWAGE'] * self.microdata['CPI99'] * self.cpi_adjustment_factor
-		self.hs_grads_only = self.microdata[self.microdata.hs_education_at_most == 1]
+
+		self.hs_grads_only = self.microdata[self.microdata.hs_education_at_most == True]
 		self.get_all_mean_wages()
 		self.get_hs_grads_mean_wages()
 
@@ -175,12 +185,76 @@ class CPS_Ops(object):
 		merged_both['wage_change'] = merged_both['mean_INCWAGE_end'] - merged_both['mean_INCWAGE_start']
 		return(merged_both)
 
-	def hsgrad_wage_projections(self):
-		return None
+	# ADDRESS THIS
+	# LINEAR REGRESSION SEEMS TO WORK HERE
+	def fit_mincer_model(self, statefip):
+
+		"""
+		In Heckman's Mincer model, people with zero earnings are dropped: https://www.nber.org/papers/w13780.pdf
+		Better reference: https://www.nber.org/papers/w9732.pdf  -- see page 49 for sample information
+		"""
+
+		# Check if a saved model exists. If it does, load and pass; if not, fit and pass
+
+		if (path.exists(settings.File_Locations.model_location)):
+			self.mincer = sm.load(settings.File_Locations.model_location)
+			return(self)
+		else:
+			pass
+
+		data = self.microdata[(self.microdata.INCTOT_99 > 0) & (self.microdata['AGE'] <= 65)]# & (self.microdata.hs_education_at_most == True)]
+
+		# recode years of schooling
+		data['years_of_schooling'] = pd.cut(self.microdata['EDUC'], bins=[0, 60, 73, 81, 92, 111, 123, 124, 125], right=True, labels=[10,12,14,13,16,18,19,20]).astype(int)
+		data['log_inctot'] = np.log(data['INCTOT_99'])
+		data['work_experience'] = data['AGE'] - data['years_of_schooling'] - 6 # based on Heckman
+		model = smf.ols("log_inctot ~ C(STATEFIP) + years_of_schooling + years_of_schooling:work_experience + work_experience + np.power(work_experience, 2)", data, missing='drop')
+		results = model.fit()
+		results.save(settings.File_Locations.model_location) # why is the model so big?
+
+		# get and save results
+		self.mincer = results
+
+		return(self)
+
+	# better calculations - figure out how to use!
+	# THIS SHOULD DEPEND ON AGE?
+	def mincer_based_wage_change(self, state, prior_education, current_age, starting_wage, years_passed):
+		schooling_coef = self.mincer.params['years_of_schooling']
+		schooling_x_exp_coef = self.mincer.params['years_of_schooling:work_experience']
+		exp_coef = self.mincer.params['work_experience']
+		exp2_coef = self.mincer.params['np.power(work_experience, 2)']
+		years_of_schooling = pd.cut([prior_education], bins=[0, 60, 73, 81, 92, 111, 123, 124, 125], right=True, labels=[10,12,14,13,16,18,19,20]).astype(int)[0] # this is a hack to get years of schooling; using the pandas function here for symmetry
+
+		# get values for calculation
+		work_experience_current = current_age - years_of_schooling - 6 # based on Heckman
+		work_experience_start = work_experience_current - years_passed
+
+		# calculate
+		# change in natural log is approximately equal to percentage change
+		value_start = schooling_x_exp_coef*work_experience_start*years_of_schooling + exp_coef*work_experience_start + exp2_coef*(work_experience_start**2)
+		value_end = schooling_x_exp_coef*work_experience_current*years_of_schooling + exp_coef*work_experience_current + exp2_coef*(work_experience_current**2)
+		
+		# results
+		percentage_wage_change = value_end - value_start
+		counterfactual_current_wage = starting_wage * (1+percentage_wage_change)
+		counterfactual_wage_growth = counterfactual_current_wage - starting_wage
+
+		return(counterfactual_wage_growth)
+
+	# ADDRESS THIS
+	def predicted_wages(self, EDUC, work_experience):
+		model = self.hs_model_results
+		X_to_predict = pd.DataFrame({"EDUC": EDUC, "work_experience":work_experience})
+		X_to_predict['years_of_schooling'] = pd.cut(X_to_predict['EDUC'], bins=[0, 60, 73, 81, 92, 111, 123, 124, 125], right=True, labels=[10,12,14,13,16,18,19,20]).astype(int)
+		predicted_wages = model.predict(exog=X_to_predict)
+		return(predicted_wages)
 
 if __name__ == "__main__":
 	
 	cps = CPS_Ops()
+	model = cps.fit_mincer_model()
+	exit()
 
 	baselines = cps.get_wage_baselines(8)
 	print(baselines)
