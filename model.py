@@ -7,7 +7,8 @@ import pickle
 import numpy as np
 
 cps_extract_location = "data/cps/cps_00027.csv"
-mincer_model_location = "data/models/mincer.pickle"
+mincer_model_params_location = "data/models/mincer_params.pickle"
+mincer_full_model_location = "data/models/mincer.pickle"
 
 class CPS_Ops(object):
 	"""
@@ -171,7 +172,7 @@ class CPS_Ops(object):
 		return(merged_both)
 
 
-	def fit_mincer_model(self, force_fit=False, params_only=True):
+	def fit_mincer_model(self, force_fit=False):
 
 		"""
 		This function fits a modified Mincer model and saves the results. If results already exist,
@@ -215,14 +216,13 @@ class CPS_Ops(object):
 		model = smf.ols("log_inctot ~ C(STATEFIP) + years_of_schooling + years_of_schooling:work_experience + work_experience + np.power(work_experience, 2)", data, missing='drop')
 		results = model.fit()
 
-		# if you save the whole model (not just params) it is very big (~1gb)
-		# please note that saving the params only and saving the full model do pretty different things!
-		if params_only == True:
-			params = results.params
-			with open(mincer_model_location,'wb') as f:
-				pickle.dump(params,f)
-		else:
-			results.save(mincer_model_location, remove_data=True)
+		# save params only to module - if you save the whole model (not just params) it is very big (~1gb)
+		params = results.params
+		with open(mincer_model_params_location,'wb') as f:
+			pickle.dump(params,f)
+		
+		# save full model to data (for repo)
+		results.save(mincer_full_model_location)
 
 		# get and save results
 		self.mincer = results
