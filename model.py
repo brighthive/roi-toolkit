@@ -1,6 +1,13 @@
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
-from ..roi import macrostats
+from roi.macrostats import BLS_API
+from datetime import date
+import pandas as pd
+import pickle
+import numpy as np
+
+cps_extract_location = "data/cps/cps_00027.csv"
+mincer_model_location = "data/models/mincer.pickle"
 
 class CPS_Ops(object):
 	"""
@@ -12,7 +19,7 @@ class CPS_Ops(object):
 	"""
 	def __init__(self):
 		self.base_year = date.today().year - 1
-		self.microdata = pd.read_csv(settings.File_Locations.cps_extract)
+		self.microdata = pd.read_csv(cps_extract_location)
 		self.microdata['age_group'] = pd.cut(self.microdata['AGE'], bins=[0,18,25,34,54,64,150], right=True, labels=['18 and under','19-25','26-34','35-54','55-64','65+']).astype(str)
 		self.microdata['hs_education_at_most'] = (self.microdata['EDUC'] >= 73) & (self.microdata['EDUC'] < 90) & (self.microdata['AGE'] >= 18)# & (self.microdata['AGE'] <= 38)
 		self.cpi_adjustment_factor = 1.5341408621736492 #BLS_API.get_cpi_adjustment(1999,self.base_year) # CPS data is converted into 1999 base, and then (below) we convert it into present-year dollars
@@ -164,7 +171,7 @@ class CPS_Ops(object):
 		return(merged_both)
 
 
-	def fit_mincer_model(self, force_fit=False):
+	def fit_mincer_model(self, force_fit=False, params_only=True):
 
 		"""
 		This function fits a modified Mincer model and saves the results. If results already exist,
@@ -191,13 +198,13 @@ class CPS_Ops(object):
 
 		"""
 
-		# Check if a saved model exists. If it does, load and pass; if not, fit and pass
+		'''# Check if a saved model exists. If it does, load and pass; if not, fit and pass
 
 		if (path.exists(settings.File_Locations.model_location) & force_fit == False):
 			self.mincer = sm.load(settings.File_Locations.model_location)
 			return(self)
 		else:
-			pass
+			pass'''
 
 		data = self.microdata[(self.microdata.INCTOT_99 > 0) & (self.microdata['AGE'] <= 65)]
 
@@ -207,7 +214,15 @@ class CPS_Ops(object):
 		data['work_experience'] = data['AGE'] - data['years_of_schooling'] - 6 # based on Heckman's work (NBER above)
 		model = smf.ols("log_inctot ~ C(STATEFIP) + years_of_schooling + years_of_schooling:work_experience + work_experience + np.power(work_experience, 2)", data, missing='drop')
 		results = model.fit()
-		results.save(settings.File_Locations.model_location) # why is the model so big?
+
+		# if you save the whole model (not just params) it is very big (~1gb)
+		# please note that saving the params only and saving the full model do pretty different things!
+		if params_only == True:
+			params = results.params
+			with open(mincer_model_location,'wb') as f:
+				pickle.dump(params,f)
+		else:
+			results.save(mincer_model_location, remove_data=True)
 
 		# get and save results
 		self.mincer = results
@@ -267,11 +282,7 @@ class CPS_Ops(object):
 
 		return(counterfactual_wage_growth)
 
-		def calculate_earnings_premium_within_group(self, educ_levels, current_ages, starting_wages, years_passed):
-			"""
-				takes np arrays
-			"""
-			return(None)
-
 if __name__ == "__main__":
-	fit_mincer_model()
+	cps = CPS_Ops()
+	model = cps.fit_mincer_model()
+	exit()
