@@ -7,7 +7,7 @@ import pickle
 import numpy as np
 
 cps_extract_location = "data/cps/cps_00027.csv"
-mincer_model_params_location = "data/models/mincer_params.pickle"
+mincer_model_params_location = "roi/data/mincer_params.pickle"
 mincer_full_model_location = "data/models/mincer.pickle"
 
 class CPS_Ops(object):
