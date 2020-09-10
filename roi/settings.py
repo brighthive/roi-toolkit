@@ -25,4 +25,5 @@ class File_Locations:
 	"""
 	cps_extract = os.path.join(dirname,"../data/cps/cps_00027.csv")
 
-	model_location = os.path.join(dirname,"../data/models/mincer.pickle")
+	mincer_model_location = os.path.join(dirname,"../data/models/mincer.pickle")
+	mincer_params_location = os.path.join(dirname, "../data/mincer_params.pickle")
