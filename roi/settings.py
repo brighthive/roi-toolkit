@@ -27,3 +27,6 @@ class File_Locations:
 
 	mincer_model_location = os.path.join(dirname,"../data/models/mincer.pickle")
 	mincer_params_location = os.path.join(dirname, "../data/mincer_params.pickle")
+
+class Defaults:
+	min_group_size = 30

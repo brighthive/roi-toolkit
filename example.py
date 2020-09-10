@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from roi import earnings
+from roi import earnings, records
 import sys
 #print(sys.modules.keys())
 
@@ -24,6 +24,10 @@ class Earnings_Premium:
 if __name__ == "__main__":
 
 	test_microdata = pd.read_csv("testing/testing-data/test_microdata.csv")
+
+	test_records = records.WageRecord(data = test_microdata, unique_identifier="Unnamed: 0", unit_of_analysis="program")
+	exit()
+
 	print(test_microdata)
 	exit()
 
