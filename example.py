@@ -24,8 +24,12 @@ class Earnings_Premium:
 if __name__ == "__main__":
 
 	test_microdata = pd.read_csv("testing/testing-data/test_microdata.csv")
-	cpi_adjustments = get_data.cpi_adjustments()
-	test_microdata['fixed'] = macrostats.Adjustments.adjust_to_current_dollars(test_microdata, 'program_start', 'earnings_start', cpi_adjustments)
+	#cpi_adjustments = get_data.cpi_adjustments()
+	#test_microdata['fixed'] = macrostats.Adjustments.adjust_to_current_dollars(test_microdata, 'program_start', 'earnings_start', cpi_adjustments)
+
+	test_summary = earnings.Summary(test_microdata, 'earnings_end')
+	a = test_summary.earnings_summaries('program')
+	print(a)
 	exit()
 
 	# create wage record from microdata
