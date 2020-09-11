@@ -47,10 +47,12 @@ class WageRecord(object):
 		unit_column_list = list(unit_column)
 
 		if (is_numeric_dtype(unit_column)):
-			warnings.warn("Column '{}' is numeric. Are you sure you want to calculate wage statistics across this variable? For human readability, it is recommended to use string or factor variables.".format(unit_of_analysis))
+			warnings.warn("Column '{}' is numeric. Are you sure you want to calculate wage statistics across this variable? For human readability, it is advisable to use string or factor variables.".format(unit_of_analysis))
 
-		# Identify if groups have fewer than min_group_size elements
+		# Identify if groups have fewer than min_group_size elements and create an attribute with group counts for later reference
 		count_per_group = self.data.groupby(unit_of_analysis, as_index=False)[self.unique_identifier].count().rename(columns={self.unique_identifier:"count"})
+		self.group_counts = count_per_group
+
 		if (count_per_group['count'].min() < Defaults.min_group_size):
 			warnings.warn("Some groups have fewer than {} individuals. By default, summary statistics for these groups will not be reported".format(Defaults.min_group_size))
 			print("\nGroups with fewer than {} individuals:".format(Defaults.min_group_size))

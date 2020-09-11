@@ -5,6 +5,7 @@ import numpy as np
 import os
 from datetime import date
 from roi import settings
+import warnings
 
 """
 
@@ -256,6 +257,7 @@ class BLS_API:
 		series = BLS_API.get_series(series_id, start_year, end_year)
 		series_frame = BLS_API.parse_api_response(series)
 		series_frame_reduced = series_frame[series_frame.periodName == "January"].rename(columns={"value":"cpi"})[['year','cpi']]
+		series_frame_reduced['year'] = series_frame_reduced['year'].astype(int)
 
 		return(series_frame_reduced)
 
@@ -349,9 +351,6 @@ class Calculations:
 
 	def wage_change(bls_wage_table, start_month, end_month):
 		"""
-		METHODOLOGICAL NOTE: This currently returns change in employment without reference to labor force status change.
-
-		This function will probably have to be refactored as we move forward - this is basically just a skeleton.
 
 		Parameters:
 		-----------
@@ -386,6 +385,40 @@ class Calculations:
 
 		return wage_change
 
+class Adjustments:
+
+	def adjust_to_current_dollars(frame_, year_column_name, value_column_name, cpi_adjustments):
+		max_year_row = cpi_adjustments.loc[cpi_adjustments['year'] == cpi_adjustments['year'].max()].iloc[0] # get latest year of CPI data
+		max_year = max_year_row['year']
+		max_cpi_index = max_year_row['cpi']
+
+		print("Latest CPI year in provided BLS data is {}: All dollars being adjusted to {} dollars.".format(str(max_year), str(max_year)))
+
+		# Error checking and warnings
+		value_nas = pd.isna(frame_[value_column_name]).sum()
+		year_nas = pd.isna(frame_[year_column_name]).sum()
+
+		if value_nas > 0:
+			warnings.warn("Value column {} contains {} NA values ({}%) of total.".format(value_column_name, value_nas, round(100*value_nas/len(frame_),2)))
+
+		if year_nas > 0:
+			warnings.warn("Year column {} contains {} NA values ({}%) of total.".format(value_column_name, value_nas, round(100*year_nas/len(frame_),2)))
+
+		# Merge provided frame with CPI data
+		frame_merged = frame_.merge(cpi_adjustments, left_on=year_column_name, right_on='year', how='left', indicator=True)
+
+		# Report years that didn't merge
+		unmerged_from_frame = frame_merged[frame_merged['_merge'] == "left_only"]
+		unmerged_len = len(unmerged_from_frame)
+
+		if unmerged_len > 0:
+			warnings.warn("{} rows in column {} could not be merged with provided CPI data. Please note that (1) the BLS API provides only up to 20 years of data; if you want to use more, you will have to manually combine multiple queries. (2) We do not recommend using more than ten years of historical data in calculations.".format(unmerged_len, year_column_name))
+			print("Years in provided dataframe for which there is no index in the provided CPI frame:\n")
+			print(set(frame_merged.loc[frame_merged['_merge'] == "left_only", year_column_name]))
+
+		# adjust and return
+		adjusted_column = frame_merged[value_column_name]/frame_merged['cpi'] * max_cpi_index
+		return(adjusted_column)
 
 
 if __name__ == "__main__":

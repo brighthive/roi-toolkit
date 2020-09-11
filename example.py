@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from roi import earnings, records
+from roi import earnings, records, macrostats, get_data
 import sys
 #print(sys.modules.keys())
 
@@ -24,8 +24,14 @@ class Earnings_Premium:
 if __name__ == "__main__":
 
 	test_microdata = pd.read_csv("testing/testing-data/test_microdata.csv")
+	cpi_adjustments = get_data.cpi_adjustments()
+	test_microdata['fixed'] = macrostats.Adjustments.adjust_to_current_dollars(test_microdata, 'program_start', 'earnings_start', cpi_adjustments)
+	exit()
 
+	# create wage record from microdata
 	test_records = records.WageRecord(data = test_microdata, unique_identifier="Unnamed: 0", unit_of_analysis="program")
+
+
 	exit()
 
 	print(test_microdata)
