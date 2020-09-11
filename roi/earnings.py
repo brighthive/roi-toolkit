@@ -3,6 +3,7 @@ import numpy as np
 from datetime import date
 from roi import settings
 from roi import macrostats
+from roi import get_data
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 from os import path
@@ -20,7 +21,6 @@ TO do here:
 
 pd.set_option('display.float_format', lambda x: '%.3f' % x)
 
-
 CPS_Education_Levels = [("GED",73),("BA",111),("MA",123),("PHD",125)]
 
 
@@ -30,17 +30,18 @@ class Premium(object):
 	"""
 	def __init__(self, mean_wages_file="data/mean_wages.csv", hs_mean_wages_file="data/hs_grads_mean_wages.csv", mincer_params_file = "data/mincer_params.pickle"):
 		self.base_year = date.today().year - 1
-		self.all_mean_wages = pd.read_csv(mean_wages_file)
-		self.hs_grads_mean_wages = pd.read_csv(hs_mean_wages_file)
-		self.mincer_params = pd.read_pickle(mincer_params_file)
-		self.cpi_adjustments = BLS_API.get_cpi_adjustment_range(self.base_year - 19, self.base_year) # need to be connected to the internet to fetch BLS data
-		self.cpi_adjustment_factor = 1.5341408621736492#BLS_API.get_cpi_adjustment(1999,self.base_year) # CPS data is converted into 1999 base, and then (below) we convert it into present-year dollars
 
-	# UNFINISHED
-	def adjust_to_current_dollars(self, frame_, column_to_adjust, cpi_adjustments):
-		max_year = cpi_adjustments.loc[cpi_adjustments['cpi'] == cpi_adjustments['cpi'].max(), 'year'].iloc[0] # this will return 1 line; we strip out the content
-		print("Latest CPI year in BLS data is {}: All dollars being adjusted to {} dollars.".format(str(max_year), str(max_year)))
-		return None
+		# Read in data and params that are packaged with the module
+		self.all_mean_wages = get_data.all_mean_wages()
+		self.hs_grads_mean_wages = get_data.hs_grads_mean_wages()
+		self.mincer_params = get_data.mincer_params()
+
+		# fetch CPI adjustments from the Bureay of Labor Statistics
+		self.cpi_adjustments = get_data.cpi_adjustments()
+		#BLS_API.get_cpi_adjustment_range(self.base_year - 19, self.base_year) # need to be connected to the internet to fetch BLS data
+
+		# DELETE
+		#self.cpi_adjustment_factor = 1.5341408621736492#BLS_API.get_cpi_adjustment(1999,self.base_year) # CPS data is converted into 1999 base, and then (below) we convert it into present-year dollars
 
 	def wage_change_across_years(self, start_year, end_year, age_group_at_start, statefip):
 		"""
