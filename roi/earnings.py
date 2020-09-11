@@ -23,6 +23,16 @@ pd.set_option('display.float_format', lambda x: '%.3f' % x)
 
 CPS_Education_Levels = [("GED",73),("BA",111),("MA",123),("PHD",125)]
 
+class Summary(object):
+	def __init__(self, frame_, earnings_column):
+		self.frame_ = frame_
+		self.earnings_column = earnings_column
+		return(None)
+
+	def earnings_summaries(self, grouping_factors):
+		grouped = self.frame_.groupby(grouping_factors, as_index=False)[self.earnings_column].agg({'n':np.size,'mean':np.mean, 'median':np.median, 'sd':np.std})
+		return(grouped)
+
 
 class Premium(object):
 	"""
