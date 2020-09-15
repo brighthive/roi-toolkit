@@ -22,6 +22,7 @@ TO do here:
 pd.set_option('display.float_format', lambda x: '%.3f' % x)
 
 CPS_Education_Levels = [("GED",73),("BA",111),("MA",123),("PHD",125)]
+CPS_Age_Groups = ['18 and under','19-25','26-34','35-54','55-64','65+']
 
 class Summary(object):
 	def __init__(self, frame_, earnings_column):
@@ -33,12 +34,17 @@ class Summary(object):
 		grouped = self.frame_.groupby(grouping_factors, as_index=False)[self.earnings_column].agg({'n':np.size,'mean':np.mean, 'median':np.median, 'sd':np.std})
 		return(grouped)
 
+class Utilities:
+	def age_to_group(pandas_series):
+		cut_series = pd.cut(pandas_series, bins=[0,18,25,34,54,64,150], right=True, labels=['18 and under','19-25','26-34','35-54','55-64','65+']).astype(str)
+		return(cut_series)
+
 
 class Premium(object):
 	"""
 	REDO DOCS HERE
 	"""
-	def __init__(self, mean_wages_file="data/mean_wages.csv", hs_mean_wages_file="data/hs_grads_mean_wages.csv", mincer_params_file = "data/mincer_params.pickle"):
+	def __init__(self):
 		self.base_year = date.today().year - 1
 
 		# Read in data and params that are packaged with the module
@@ -75,6 +81,13 @@ class Premium(object):
 		-------
 		A single number indicating the mean wage across the dataset for this group of people.
 		"""
+
+		# Validation
+		if age_group_at_start not in CPS_Age_Groups:
+			raise ValueError("Invalid age group. Argument age_group_at_start must be in ['18 and under','19-25','26-34','35-54','55-64','65+']")
+		else:
+			pass
+
 		wage_start = self.all_mean_wages.loc[(self.all_mean_wages['YEAR'] == start_year) & (self.all_mean_wages['age_group'] == age_group_at_start) & (self.all_mean_wages['STATEFIP'] == statefip), 'mean_INCWAGE'].iat[0]
 		wage_end = self.all_mean_wages.loc[(self.all_mean_wages['YEAR'] == end_year) & (self.all_mean_wages['age_group'] == age_group_at_start) & (self.all_mean_wages['STATEFIP'] == statefip), 'mean_INCWAGE'].iat[0]
 		wage_change = wage_end - wage_start
@@ -117,7 +130,7 @@ class Premium(object):
 		merged_start = ind_frame.merge(cps_frame, left_on=[start_year_column, age_group_start_column, statefip_column], right_on=['YEAR','age_group','STATEFIP'], how='left')
 		merged_both = merged_start.merge(cps_frame, left_on=[end_year_column, age_group_start_column, statefip_column], right_on=['YEAR','age_group','STATEFIP'], how='left', suffixes=('_start','_end'))
 		merged_both['wage_change'] = merged_both['mean_INCWAGE_end'] - merged_both['mean_INCWAGE_start']
-		return(merged_both)
+		return(merged_both['wage_change'])
 
 
 	def mincer_based_wage_change(self, state, prior_education, current_age, starting_wage, years_passed):
