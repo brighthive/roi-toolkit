@@ -133,7 +133,7 @@ class Premium(object):
 		return(merged_both['wage_change'])
 
 
-	def mincer_based_wage_change(self, state, prior_education, current_age, starting_wage, years_passed):
+	def mincer_predicted_wage(self, state, prior_education, current_age, starting_wage, years_passed):
 		"""
 		Given a state, a prior education level (CPS EDUC code), the current age of an individual, their wage
 		before entering an educational program, and the time they spent in the program, this function calculates
@@ -168,7 +168,7 @@ class Premium(object):
 		schooling_x_exp_coef = self.mincer_params['years_of_schooling:work_experience']
 		exp_coef = self.mincer_params['work_experience']
 		exp2_coef = self.mincer_params['np.power(work_experience, 2)']
-		years_of_schooling = pd.cut([prior_education], bins=[0, 60, 73, 81, 92, 111, 123, 124, 125], right=True, labels=[10,12,14,13,16,18,19,20]).astype(int)[0] # this is a hack to get years of schooling; using the pandas function here for symmetry
+		years_of_schooling = pd.cut(prior_education, bins=[-1, 60, 73, 81, 92, 111, 123, 124, 125], right=True, labels=[10,12,14,13,16,18,19,20]).astype(float) # this is a hack to get years of schooling; using the pandas function here for symmetry
 
 		# get values for calculation
 		work_experience_current = current_age - years_of_schooling - 6 # based on Heckman
@@ -178,13 +178,24 @@ class Premium(object):
 		# change in natural log is approximately equal to percentage change
 		value_start = schooling_x_exp_coef*work_experience_start*years_of_schooling + exp_coef*work_experience_start + exp2_coef*(work_experience_start**2)
 		value_end = schooling_x_exp_coef*work_experience_current*years_of_schooling + exp_coef*work_experience_current + exp2_coef*(work_experience_current**2)
-		
+
 		# results
 		percentage_wage_change = value_end - value_start
 		counterfactual_current_wage = starting_wage * (1+percentage_wage_change)
 		counterfactual_wage_growth = counterfactual_current_wage - starting_wage
 
 		return(counterfactual_wage_growth)
+
+	def Full_Earnings_Premium(self, dataframe, earnings_before_column, earnings_after_column, start_year_column, end_year_column, age_at_start, statefip, edlevel):
+		dataframe['age_group_at_start'] = pd.cut(dataframe[age_at_start], bins=[0,18,25,34,54,64,150], right=True, labels=['18 and under','19-25','26-34','35-54','55-64','65+']).astype(str)
+		dataframe['raw_earnings_change'] = dataframe[earnings_after_column] - dataframe[earnings_before_column]
+		dataframe['years_in_program'] = dataframe[end_year_column] - dataframe[start_year_column]
+		dataframe['mincer_predicted_wage_change'] = self.mincer_predicted_wage(state=statefip, prior_education=dataframe[edlevel], current_age=dataframe[age_at_start], starting_wage=dataframe[earnings_before_column], years_passed=dataframe['years_in_program'])
+		dataframe['earnings_premium'] = dataframe['raw_earnings_change'] - dataframe['mincer_predicted_wage_change']
+		return(dataframe)
+
+	def Group_Earnings_Premium(self):
+		return(None)
 
 
 if __name__ == "__main__":
