@@ -30,7 +30,7 @@ if __name__ == "__main__":
 
 	# Create an age group column. The provided data has an age column denoting CURRENT age... but we want age at start
 
-	print(test_microdata.head())
+	#print(test_microdata.head())
 	
 	# Adjust a dollar column in the microdata to current dollars
 	# cpi_adjustments = get_data.cpi_adjustments()
@@ -52,7 +52,17 @@ if __name__ == "__main__":
 	# test_microdata['group_change'] = prem.frames_wage_change_across_years(ind_frame=test_microdata, start_year_column='program_start', end_year_column='program_end', age_group_start_column='age_group_at_start', statefip_column='state', hsgrads_only = True)
 	# print(test_microdata)	
 
-	# Calculate the individual-level earnings premium for a collection of microdata
+	# Calculate the individual-level earnings premium for a single individual
+	#prem = earnings.Premium()
+	#premium_test = prem.mincer_based_wage_change(state=36, prior_education=92, current_age=30, starting_wage=10000, years_passed=4)
+	#print(premium_test)
+	#exit()
+
+	# Calculate the individual-level earnings premia for all rows in a dataframe
+	prem = earnings.Premium()
+	premium_calc = prem.Full_Earnings_Premium(test_microdata, 'earnings_start', 'earnings_end', 'program_start', 'program_end','age','state','education_level')
+	print(premium_calc)
+	exit()
 
 
 

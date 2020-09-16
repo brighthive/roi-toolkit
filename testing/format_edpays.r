@@ -24,3 +24,16 @@ final[final$CIPCode == "-1", "CIPCode"] <- ""
 # this is entered here manually, but comes from the rudimentary_hs_baseline() function in cps_loader.py()
 
 write.csv(final, "sbir-roi/data/edpays/edpays_data_for_pairin.csv")
+
+
+#######
+
+m <- quap(
+  alist(
+    perc.protein ~ dnorm(a + c + B*mass, sd),
+    a ~ dnorm(0, 0.5),
+    c ~ dnorm(0, 0.011),
+    B ~ dnorm(0, 0.2),
+    sd ~ dexp(1)
+  ), data=milk
+)
