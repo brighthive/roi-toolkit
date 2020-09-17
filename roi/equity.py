@@ -22,7 +22,7 @@ def dataframe_groups_to_ndarray(dataframe, groupby_columns, value_to_groups):
 	"""
 	grouped = dataframe.groupby(groupby_columns)[value_to_groups].apply(lambda x: np.array(x.values))
 	groups = np.array(grouped.index)
-	list_of_values = np.array(grouped)
+	list_of_values = np.asarray(grouped)
 	return (groups, list_of_values)
 
 class Supporting:
@@ -84,6 +84,7 @@ class Theil_T:
 		N = len(x)
 		mu = np.mean(x)
 		xi_over_mu = x / mu
+		xi_over_mu[xi_over_mu < 0] = 0
 		ln_xi_over_mu = np.log(xi_over_mu)
 		theil = (1/N)*np.sum(xi_over_mu * ln_xi_over_mu)
 		return theil
@@ -190,6 +191,17 @@ class Theil_T:
 		second_term = Theil_T.second_term(array_of_groups)
 		ratio = second_term / (first_term + second_term)
 		return ratio
+
+	def Ratio_From_DataFrame(dataframe, variable_of_concern, grouping_variable):
+		groups, values = dataframe_groups_to_ndarray(dataframe, grouping_variable, variable_of_concern)
+
+		zero_or_less = (np.concatenate(values).flatten() <= 0).sum()
+		if (zero_or_less > 0):
+			raise ValueError("Variable provided contains zero or negative values. The Theil T index works only with positive values.")
+
+		t_ratio = Theil_T.Calculate_Ratio(values)
+		return(t_ratio)
+
 
 class Theil_L:
 	"""
@@ -325,3 +337,42 @@ class Theil_L:
 		second_term = Theil_L.second_term(array_of_groups)
 		ratio = second_term / (first_term + second_term)
 		return ratio
+
+	def Ratio_From_DataFrame(dataframe, variable_of_concern, grouping_variable):
+		groups, values = dataframe_groups_to_ndarray(dataframe, grouping_variable, variable_of_concern)
+
+		zero_or_less = (np.concatenate(values).flatten() <= 0).sum()
+		if (zero_or_less > 0):
+			raise ValueError("Variable provided contains zero or negative values. The Theil T index works only with positive values.")
+
+		l_ratio = Theil_L.Calculate_Ratio(values)
+		return(l_ratio)
+
+class ANOVA:
+	# decomposition of income inequality by subgroups: http://www.fao.org/3/a-am342e.pdf
+	# To reduce dependencies and improve flexibility, we implement our own ANOVA
+	# should implement both bayesian (nonparametric) and frequentist (parametric) anova
+
+	def Variance_Components(array_of_groups, array_of_values):
+		ungrouped_observations = np.concatenate(array_of_values).flatten()
+		n = len(ungrouped_observations)
+		total_variance = np.var(ungrouped_observations)
+
+		group_variances = [np.var(group) for group in array_of_values]
+		group_weights = np.asarray([len(group)/n for group in array_of_values])
+		within_group_means = [np.mean(group) for group in array_of_values]
+
+		within_group_variance = np.sum(group_variances * group_weights)
+		cross_group_variance = np.var(within_group_means)
+		
+		return(total_variance, within_group_variance, cross_group_variance)
+
+	def Ratio(array_of_groups, array_of_values):
+		total_variance, within_group_variance, cross_group_variance = ANOVA.Variance_Components(array_of_groups, array_of_values)
+		return(cross_group_variance/total_variance)
+
+	def Analysis(array_of_values, array_of_values):
+		return(None)
+
+
+

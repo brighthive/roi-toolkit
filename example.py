@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from roi import earnings, records, macrostats, get_data
+from roi import earnings, records, macrostats, get_data, equity
 from datetime import date
 import sys
 #print(sys.modules.keys())
@@ -27,42 +27,78 @@ if __name__ == "__main__":
 	test_microdata = pd.read_csv("testing/testing-data/test_microdata.csv")
 	test_microdata['age_at_start'] = test_microdata['age'] - (date.today().year - test_microdata['program_start'])
 	test_microdata['age_group_at_start'] = earnings.Utilities.age_to_group(test_microdata['age_at_start'])
+	print(len(test_microdata))
 
 	# Create an age group column. The provided data has an age column denoting CURRENT age... but we want age at start
 
 	#print(test_microdata.head())
+
+	###### basic functions  ######
 	
 	# Adjust a dollar column in the microdata to current dollars
+
 	# cpi_adjustments = get_data.cpi_adjustments()
 	# test_microdata['fixed'] = macrostats.Adjustments.adjust_to_current_dollars(test_microdata, 'program_start', 'earnings_start', cpi_adjustments)
 	# print(test_microdata)
 
 	# Get earnings summary from test microdata
+
 	# test_summary = earnings.Summary(test_microdata, 'earnings_end')
 	# stats = test_summary.earnings_summaries(['program'])
 	# print(stats)
 
 	# Get average wage change for a given age group and state across years, based on CPS data
+
 	#prem = earnings.Premium()
 	#changes = prem.wage_change_across_years(start_year=2012, end_year=2016, age_group_at_start="19-25", statefip=8)
 	#print(changes)
 
 	# For a given dataframe, create a new column for the baseline wage change across years
+
 	# prem = earnings.Premium()
 	# test_microdata['group_change'] = prem.frames_wage_change_across_years(ind_frame=test_microdata, start_year_column='program_start', end_year_column='program_end', age_group_start_column='age_group_at_start', statefip_column='state', hsgrads_only = True)
 	# print(test_microdata)	
 
 	# Calculate the individual-level earnings premium for a single individual
+
 	#prem = earnings.Premium()
 	#premium_test = prem.mincer_based_wage_change(state=36, prior_education=92, current_age=30, starting_wage=10000, years_passed=4)
 	#print(premium_test)
 	#exit()
 
 	# Calculate the individual-level earnings premia for all rows in a dataframe
+
+	# prem = earnings.Premium()
+	# premium_calc = prem.Full_Earnings_Premium(test_microdata, 'earnings_start', 'earnings_end', 'program_start', 'program_end','age','state','education_level')
+	# print(premium_calc)
+	# exit()
+
+	# Calculate program-level earnings premium statistics!
+
+	# prem = earnings.Premium()
+	# premium_calc = prem.Group_Earnings_Premium(test_microdata, 'earnings_start', 'earnings_end', 'program_start', 'program_end','age','state','education_level','program')
+	# print(premium_calc)
+	# exit()
+
+	###### getting a bit more complicated ######
+
+	# Calculate Theil T ratio for earnings
+
+	# First we need to get an earnings column
 	prem = earnings.Premium()
 	premium_calc = prem.Full_Earnings_Premium(test_microdata, 'earnings_start', 'earnings_end', 'program_start', 'program_end','age','state','education_level')
-	print(premium_calc)
+	# Now we calculate inequality across races
+	#theil_t_1= equity.Theil_T.Ratio_From_DataFrame(premium_calc, 'earnings_end', 'race')
+
+	#theil_t_1 = equity.Theil_T.Ratio_From_DataFrame(premium_calc, 'earnings_premium', 'race')
+	# ^^^ this throws an error because earnings premiums can be negative! we have to use a different statistic
+	groups, values = equity.dataframe_groups_to_ndarray(premium_calc, 'race', 'earnings_premium')
+	ratio = equity.ANOVA.Ratio(groups, values)
+	print(ratio)
 	exit()
+
+
+	# Calculate program-level inequality stats for a given variable (premium here)
 
 
 
@@ -81,7 +117,7 @@ if __name__ == "__main__":
 	wagedif2 = cps.mincer_based_wage_change(36, 92, 55, 50000, 4)
 	print(wagedif)
 	print(wagedif2)
-	exit()
+	exit()	
 	predicted_wages = cps.predicted_wages([73,111],[4,10])
 	print(predicted_wages)
 	exit()	

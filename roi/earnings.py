@@ -194,8 +194,12 @@ class Premium(object):
 		dataframe['earnings_premium'] = dataframe['raw_earnings_change'] - dataframe['mincer_predicted_wage_change']
 		return(dataframe)
 
-	def Group_Earnings_Premium(self):
-		return(None)
+	def Group_Earnings_Premium(self, dataframe, earnings_before_column, earnings_after_column, start_year_column, end_year_column, age_at_start, statefip, edlevel, grouping_variable):
+		ind_level_earnings = self.Full_Earnings_Premium(dataframe, earnings_before_column, earnings_after_column, start_year_column, end_year_column, age_at_start, statefip, edlevel)
+		summ = Summary(ind_level_earnings, 'earnings_premium')
+		summaries = summ.earnings_summaries(grouping_variable)
+		# here - do not report if less than default number!
+		return(summaries)
 
 
 if __name__ == "__main__":
