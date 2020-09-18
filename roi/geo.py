@@ -3,7 +3,7 @@ import os
 import pandas as pd
 import json
 import numpy as np
-import settings
+from roi import settings
 
 """
 
@@ -37,6 +37,69 @@ https://www.census.gov/acs/www/data/data-tables-and-tools/data-profiles/
 https://api.census.gov/data/2017/acs/acs5/profile/variables.html
 
 """
+
+def State_To_FIPS(state_abbreviation):
+	# hardcoded - FIPS aren't changing anytime soon
+	crosswalk = {
+		"AL":1,
+		"AK":2,
+		"AZ":4,
+		"AR":5,
+		"CA":6,
+		"CO":8,
+		"CT":9,
+		"DE":10,
+		"DC":11,
+		"FL":12,
+		"GA":13,
+		"HI":15,
+		"ID":16,
+		"IL":17,
+		"IN":18,
+		"IA":19,
+		"KS":20,
+		"KY":21,
+		"LA":22,
+		"ME":23,
+		"MD":24,
+		"MA":25,
+		"MI":26,
+		"MN":27,
+		"MS":28,
+		"MO":29,
+		"MT":30,
+		"NE":31,
+		"NV":32,
+		"NH":33,
+		"NJ":34,
+		"NM":35,
+		"NY":36,
+		"NC":37,
+		"ND":38,
+		"OH":39,
+		"OK":40,
+		"OR":41,
+		"PA":42,
+		"PR":72,
+		"RI":44,
+		"SC":45,
+		"SD":46,
+		"TN":47,
+		"TX":48,
+		"UT":49,
+		"VT":50,
+		"VA":51,
+		"VI":78,
+		"WA":53,
+		"WV":54
+	}
+
+	if state_abbreviation not in crosswalk.keys():
+		raise ValueError("{} is not a valid state abbreviation. State_To_FIPS() requires an abbreviation like CA.".format(state_abbreviation))
+	else:
+		return(crosswalk[state_abbreviation])
+
+	return(None)
 
 class ADI (object):
 	"""
@@ -113,56 +176,59 @@ class ADI (object):
 
 		return(geocodes_merged)
 
-def get_batch_geocode(addresses):
-	return None
+class Census:
 
-def get_geocode_for_address(address, city, state_code):
-	"""
-	Fetches a 12-digit FIPS code from the Census Geocoder API.
+	def get_batch_geocode(addresses):
+		return None
 
-	The Geocoder returns a JSON object containing all relevant geographic data, such as latitude and longitude.
-	But this function simply takes the components necessary to create a GEOID at the block group level.
-	Block groups roughly correspond to neighborhoods.
+	def get_geocode_for_address(address, city, state_code):
+		"""
+		Fetches a 12-digit FIPS code from the Census Geocoder API.
 
-	We use the JSON response here to form GEOID as follows with COMPONENTS[LENGTH]: STATE[2] + COUNTY[3] + TRACT[6] + BLOCK GROUP[1] = GEOID[12]
+		The Geocoder returns a JSON object containing all relevant geographic data, such as latitude and longitude.
+		But this function simply takes the components necessary to create a GEOID at the block group level.
+		Block groups roughly correspond to neighborhoods.
 
-	Parameters:
-	-----------
-	address : str
-		Street address e.g. "42 Zaphod Beeblebrox Avenue"
+		We use the JSON response here to form GEOID as follows with COMPONENTS[LENGTH]: STATE[2] + COUNTY[3] + TRACT[6] + BLOCK GROUP[1] = GEOID[12]
 
-	city : str
-		City name e.g. "Prefectville"
+		Parameters:
+		-----------
+		address : str
+			Street address e.g. "42 Zaphod Beeblebrox Avenue"
 
-	state_code : str
-		Two-digit state postal code e.g.: "CA" or "NY"
+		city : str
+			City name e.g. "Prefectville"
 
-	Returns
-	-------
-	A twelve-digit code -- as a string -- denoting a neighborhood-sized region in the United States.
-	"""
+		state_code : str
+			Two-digit state postal code e.g.: "CA" or "NY"
 
-	url = "https://geocoding.geo.census.gov/geocoder/geographies/address?street={}&city={}&state={}&benchmark=9&format=json&vintage=Census2010_Census2010".format(address, city, state_code)
+		Returns
+		-------
+		A twelve-digit code -- as a string -- denoting a neighborhood-sized region in the United States.
+		"""
 
-	# first fetch response
-	try:
-		response = requests.get(url)
-		response_content = response.content
-		response_parsed = json.loads(response_content)
-	except Exception as e:
-		print("EXCEPTION: Couldn't get geocoding API response for {}:\n 	{}".format(address, e))
+		url = "https://geocoding.geo.census.gov/geocoder/geographies/address?street={}&city={}&state={}&benchmark=9&format=json&vintage=Census2010_Census2010".format(address, city, state_code)
 
-	# access necessary elements
-	try:
-		first_address_match = response_parsed['result']['addressMatches'][0]
-		first_address_match_geographies = first_address_match['geographies']
-		tract_geoid = str(first_address_match_geographies['Census Tracts'][0]['GEOID'])
-		block_group = str(first_address_match_geographies['Census Blocks'][0]['BLKGRP'])
-		return "{}{}".format(tract_geoid, block_group)
-	except Exception as e:
-		print(response_parsed)
-		print("EXCEPTION: Couldn't access vital response elements in geocode API response:\n 	{}".format(e))
-		return ""		
+		# first fetch response
+		try:
+			response = requests.get(url)
+			response_content = response.content
+			print(response_content)
+			response_parsed = json.loads(response_content)
+		except Exception as e:
+			print("EXCEPTION: Couldn't get geocoding API response for {}:\n 	{}".format(address, e))
+
+		# access necessary elements
+		try:
+			first_address_match = response_parsed['result']['addressMatches'][0]
+			first_address_match_geographies = first_address_match['geographies']
+			tract_geoid = str(first_address_match_geographies['Census Tracts'][0]['GEOID'])
+			block_group = str(first_address_match_geographies['Census Blocks'][0]['BLKGRP'])
+			return "{}{}".format(tract_geoid, block_group)
+		except Exception as e:
+			print(response_parsed)
+			print("EXCEPTION: Couldn't access vital response elements in geocode API response:\n 	{}".format(e))
+			return ""		
 
 if __name__ == "__main__":
 	adi = ADI()
