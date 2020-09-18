@@ -27,4 +27,12 @@ for (i in 1:nrow(combos)) {
 
 frames_$state = "08"
 
+# Get addresses
+ # addresses are sourced from https://catalog.data.gov/dataset/home-health-care-agencies
+address.file <- read.csv("Home_Health_Care_Agencies.csv")
+address.file$full.address <- paste(address.file$Address,address.file$City, address.file$State, address.file$Zip)
+
+frames_$address <- sample(address.file$full.address, nrow(frames_), replace = FALSE)
+frames_$id <- sample(1:nrow(frames_))
+
 write.csv(frames_,"test_microdata.csv")

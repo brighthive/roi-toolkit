@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from roi import earnings, records, macrostats, get_data, equity
+from roi import earnings, records, macrostats, get_data, equity, geo
 from datetime import date
 import sys
 #print(sys.modules.keys())
@@ -27,7 +27,6 @@ if __name__ == "__main__":
 	test_microdata = pd.read_csv("testing/testing-data/test_microdata.csv")
 	test_microdata['age_at_start'] = test_microdata['age'] - (date.today().year - test_microdata['program_start'])
 	test_microdata['age_group_at_start'] = earnings.Utilities.age_to_group(test_microdata['age_at_start'])
-	print(len(test_microdata))
 
 	# Create an age group column. The provided data has an age column denoting CURRENT age... but we want age at start
 
@@ -85,25 +84,32 @@ if __name__ == "__main__":
 	# Calculate Theil T ratio for earnings
 
 	# First we need to get an earnings column
-	prem = earnings.Premium()
-	premium_calc = prem.Full_Earnings_Premium(test_microdata, 'earnings_start', 'earnings_end', 'program_start', 'program_end','age','state','education_level')
+	#prem = earnings.Premium()
+	#premium_calc = prem.Full_Earnings_Premium(test_microdata, 'earnings_start', 'earnings_end', 'program_start', 'program_end','age','state','education_level')
 	# Now we calculate inequality across races
-	#theil_t_1= equity.Theil_T.Ratio_From_DataFrame(premium_calc, 'earnings_end', 'race')
+	#theil_t_1= equity.Theil_T.Ratio_From_DataFrame(premium_calc, 'earnings_end', 'race') # final earnings is always positive - but earnings premium can be negative, so Theil can't be used!
 
-	#theil_t_1 = equity.Theil_T.Ratio_From_DataFrame(premium_calc, 'earnings_premium', 'race')
-	# ^^^ this throws an error because earnings premiums can be negative! we have to use a different statistic
-	groups, values = equity.dataframe_groups_to_ndarray(premium_calc, 'race', 'earnings_premium')
-	ratio = equity.ANOVA.Ratio(groups, values)
-	print(ratio)
+#	# Inequality in earnings premium
+	# groups, values = equity.dataframe_groups_to_ndarray(premium_calc, 'race', 'earnings_premium')
+	# ratio = equity.ANOVA.Ratio(groups, values)
+	# print(ratio)
+	# exit()
+
+	###### geocode address ######
+
+	print(geo.State_To_FIPS("CAL"))
 	exit()
 
-
 	# Calculate program-level inequality stats for a given variable (premium here)
+	example_address = test_microdata.iloc[0]['address']
+	geocode = geo.Census.get_geocode_for_address("17250 W 10 MILE ROAD", "SOUTHFIELD", "MI")
+	print(geocode)
+	exit()
 
 
 
 	# create wage record from microdata
-	test_records = records.WageRecord(data = test_microdata, unique_identifier="Unnamed: 0", unit_of_analysis="program")
+	test_records = records.WageRecord(data = test_microdata, unique_identifier="id", unit_of_analysis="program")
 
 
 	exit()

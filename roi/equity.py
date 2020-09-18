@@ -371,7 +371,7 @@ class ANOVA:
 		total_variance, within_group_variance, cross_group_variance = ANOVA.Variance_Components(array_of_groups, array_of_values)
 		return(cross_group_variance/total_variance)
 
-	def Analysis(array_of_values, array_of_values):
+	def Analysis(array_of_groups, array_of_values):
 		return(None)
 
 
