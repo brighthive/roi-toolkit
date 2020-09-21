@@ -3,6 +3,7 @@ import os
 import pandas as pd
 import json
 import numpy as np
+from io import StringIO
 from roi import settings
 
 """
@@ -204,7 +205,7 @@ class Census:
 		A twelve-digit code -- as a string -- denoting a neighborhood-sized region in the United States.
 		"""
 
-		dataframe.to_csv("temp_addresses_frame.csv")
+		dataframe.to_csv("temp_addresses_frame.csv", index=False, header=None)
 		files = {'addressFile': open('temp_addresses_frame.csv', 'rb')}
 
 		url = "https://geocoding.geo.census.gov/geocoder/locations/addressbatch?benchmark=9"
@@ -213,23 +214,33 @@ class Census:
 		try:
 			response = requests.post(url, files=files)
 			response_content = response.content
-			print(response_content)
-			exit()
-			response_parsed = json.loads(response_content)
 		except Exception as e:
 			print("EXCEPTION: Couldn't get geocoding API response for FILE")
 
-		# access necessary elements
+		# turn response into dataframe
 		try:
-			first_address_match = response_parsed['result']['addressMatches'][0]
-			first_address_match_geographies = first_address_match['geographies']
-			tract_geoid = str(first_address_match_geographies['Census Tracts'][0]['GEOID'])
-			block_group = str(first_address_match_geographies['Census Blocks'][0]['BLKGRP'])
-			return "{}{}".format(tract_geoid, block_group)
+			bytes_to_csv = StringIO(str(response_content,'utf-8'))
+			df = pd.read_csv(bytes_to_csv, names=['id','provided_address','match','matchtype','clean_address','latlon','geocode','lr'])
 		except Exception as e:
-			print(response_parsed)
-			print("EXCEPTION: Couldn't access vital response elements in geocode API response:\n 	{}".format(e))
-			return ""	
+			print("EXCEPTION: Failed parsing Census batch geocoder response into CSV: {}".format(e))
+
+		# keep only returned responses and make geocode string
+		successful_responses = df[pd.notna(df['geocode'])]
+		successful_responses['geocode'] = successful_responses['geocode'].astype(int).astype(str, errors='raise')
+
+		# merge with original - dump non-geocode variables for now!
+		response_to_merge = successful_responses[['id','geocode']]
+		to_return = dataframe.merge(response_to_merge, how='left', on='id')
+
+		succesfully_merged = round(100*pd.notna(df['geocode']).mean(),2)
+		exact_matches = round(100*(successful_responses['matchtype'] == "Exact").mean(),2)
+
+		print("Successfully geocoded {}% of {} passed addresses.".format(succesfully_merged, len(df)))
+		print("Of successfully matched addresses, {}% were exact matches".format(exact_matches))
+
+		return(to_return)
+
+
 
 	def get_geocode_for_address(address, city, state_code):
 		"""

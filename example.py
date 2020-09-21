@@ -97,12 +97,18 @@ if __name__ == "__main__":
 
 	###### geocode address ######
 
-	print(geo.State_To_FIPS("CAL"))
-	exit()
+	#print(geo.State_To_FIPS("CA"))
+	#exit()
 
 	# Calculate program-level inequality stats for a given variable (premium here)
-	example_address = test_microdata.iloc[0]['address']
-	geocode = geo.Census.get_geocode_for_address("17250 W 10 MILE ROAD", "SOUTHFIELD", "MI")
+	#example_address = test_microdata.iloc[0]
+	#geocode = geo.Census.get_geocode_for_address(example_address['Address'], example_address['City'], example_address['State'])
+	#print(geocode)
+
+	# Batch geocode addresses
+	example_addresses = test_microdata.iloc[2:10]
+	addresses_frame = example_addresses[['id','Address','City','State','Zip']]
+	geocode = geo.Census.get_batch_geocode(addresses_frame)
 	print(geocode)
 	exit()
 
