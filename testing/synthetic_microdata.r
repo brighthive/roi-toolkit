@@ -32,7 +32,13 @@ frames_$state = "08"
 address.file <- read.csv("Home_Health_Care_Agencies.csv")
 address.file$full.address <- paste(address.file$Address,address.file$City, address.file$State, address.file$Zip)
 
-frames_$address <- sample(address.file$full.address, nrow(frames_), replace = FALSE)
+
+sample.indices<- sample(nrow(frames_), replace = FALSE)
+frames_$full_address <- address.file[sample.indices,'full.address']
+frames_$Address <- address.file[sample.indices,'Address']
+frames_$City <- address.file[sample.indices,'City']
+frames_$State <- address.file[sample.indices,'State']
+frames_$Zip <- address.file[sample.indices,'Zip']
 frames_$id <- sample(1:nrow(frames_))
 
 write.csv(frames_,"test_microdata.csv")

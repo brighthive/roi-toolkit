@@ -178,8 +178,58 @@ class ADI (object):
 
 class Census:
 
-	def get_batch_geocode(addresses):
-		return None
+	def get_batch_geocode(dataframe):
+		"""
+		Fetches a 12-digit FIPS code from the Census Geocoder API.
+
+		The Geocoder returns a JSON object containing all relevant geographic data, such as latitude and longitude.
+		But this function simply takes the components necessary to create a GEOID at the block group level.
+		Block groups roughly correspond to neighborhoods.
+
+		We use the JSON response here to form GEOID as follows with COMPONENTS[LENGTH]: STATE[2] + COUNTY[3] + TRACT[6] + BLOCK GROUP[1] = GEOID[12]
+
+		Parameters:
+		-----------
+		address : str
+			Street address e.g. "42 Zaphod Beeblebrox Avenue"
+
+		city : str
+			City name e.g. "Prefectville"
+
+		state_code : str
+			Two-digit state postal code e.g.: "CA" or "NY"
+
+		Returns
+		-------
+		A twelve-digit code -- as a string -- denoting a neighborhood-sized region in the United States.
+		"""
+
+		dataframe.to_csv("temp_addresses_frame.csv")
+		files = {'addressFile': open('temp_addresses_frame.csv', 'rb')}
+
+		url = "https://geocoding.geo.census.gov/geocoder/locations/addressbatch?benchmark=9"
+
+		# first fetch response
+		try:
+			response = requests.post(url, files=files)
+			response_content = response.content
+			print(response_content)
+			exit()
+			response_parsed = json.loads(response_content)
+		except Exception as e:
+			print("EXCEPTION: Couldn't get geocoding API response for FILE")
+
+		# access necessary elements
+		try:
+			first_address_match = response_parsed['result']['addressMatches'][0]
+			first_address_match_geographies = first_address_match['geographies']
+			tract_geoid = str(first_address_match_geographies['Census Tracts'][0]['GEOID'])
+			block_group = str(first_address_match_geographies['Census Blocks'][0]['BLKGRP'])
+			return "{}{}".format(tract_geoid, block_group)
+		except Exception as e:
+			print(response_parsed)
+			print("EXCEPTION: Couldn't access vital response elements in geocode API response:\n 	{}".format(e))
+			return ""	
 
 	def get_geocode_for_address(address, city, state_code):
 		"""
