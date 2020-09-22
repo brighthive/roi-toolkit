@@ -162,6 +162,8 @@ class ADI (object):
 
 		adi_ranks_only = self.adi_frame[['fips', 'adi_quintile']]
 		geocodes_merged = dataframe.merge(adi_ranks_only, left_on=geocode_column_name, right_on='fips', how='left', indicator=True)
+		print(geocodes_merged)
+		exit()
 
 		# count up the merges
 		count_merged = np.sum(geocodes_merged._merge == "both")
@@ -208,7 +210,7 @@ class Census:
 		dataframe.to_csv("temp_addresses_frame.csv", index=False, header=None)
 		files = {'addressFile': open('temp_addresses_frame.csv', 'rb')}
 
-		url = "https://geocoding.geo.census.gov/geocoder/locations/addressbatch?benchmark=9"
+		url = "https://geocoding.geo.census.gov/geocoder/geographies/addressbatch?benchmark=9&vintage=Census2010_Census2010"
 
 		# first fetch response
 		try:
@@ -220,25 +222,32 @@ class Census:
 		# turn response into dataframe
 		try:
 			bytes_to_csv = StringIO(str(response_content,'utf-8'))
-			df = pd.read_csv(bytes_to_csv, names=['id','provided_address','match','matchtype','clean_address','latlon','geocode','lr'])
+			df = pd.read_csv(bytes_to_csv, names=['id','provided_address','match','matchtype','clean_address','latlon','tiger_line_id','side_of_street','statefip','county','tract','block'], dtype=str).fillna("")
 		except Exception as e:
 			print("EXCEPTION: Failed parsing Census batch geocoder response into CSV: {}".format(e))
 
-		# keep only returned responses and make geocode string
-		successful_responses = df[pd.notna(df['geocode'])]
-		successful_responses['geocode'] = successful_responses['geocode'].astype(int).astype(str, errors='raise')
+		# combine variables to get a geocode
+		df['block_group'] = df['block'].astype(str).str.slice(start = 0, stop = 1)
+		df['geocode'] = df['statefip'] + df['county'] + df['tract'] + df['block_group']
+
+		# make id string for merging
+		df['id'] = df['id'].astype(int)
+
+		# where did we have blank responses?
+		null_geocode = (df['geocode'] != "")
+		successful_responses = df[null_geocode]
 
 		# merge with original - dump non-geocode variables for now!
 		response_to_merge = successful_responses[['id','geocode']]
-		to_return = dataframe.merge(response_to_merge, how='left', on='id')
+		to_return = dataframe.merge(response_to_merge, how='left', on='id', left_index=True).set_index(dataframe.index).fillna("") # set index is important!
 
-		succesfully_merged = round(100*pd.notna(df['geocode']).mean(),2)
+		succesfully_merged = round(100*null_geocode.mean(),2)
 		exact_matches = round(100*(successful_responses['matchtype'] == "Exact").mean(),2)
 
 		print("Successfully geocoded {}% of {} passed addresses.".format(succesfully_merged, len(df)))
 		print("Of successfully matched addresses, {}% were exact matches".format(exact_matches))
 
-		return(to_return)
+		return(to_return['geocode'])
 
 
 
@@ -274,7 +283,6 @@ class Census:
 		try:
 			response = requests.get(url)
 			response_content = response.content
-			print(response_content)
 			response_parsed = json.loads(response_content)
 		except Exception as e:
 			print("EXCEPTION: Couldn't get geocoding API response for {}:\n 	{}".format(address, e))
@@ -287,7 +295,7 @@ class Census:
 			block_group = str(first_address_match_geographies['Census Blocks'][0]['BLKGRP'])
 			return "{}{}".format(tract_geoid, block_group)
 		except Exception as e:
-			print(response_parsed)
+			#print(response_parsed)
 			print("EXCEPTION: Couldn't access vital response elements in geocode API response:\n 	{}".format(e))
 			return ""		
 
