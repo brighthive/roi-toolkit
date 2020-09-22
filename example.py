@@ -105,28 +105,13 @@ if __name__ == "__main__":
 	#geocode = geo.Census.get_geocode_for_address(example_address['Address'], example_address['City'], example_address['State'])
 	#print(geocode)
 
-	# Batch geocode addresses
+	# Batch geocode addresses and fetch SES quintiles
 	example_addresses = test_microdata.iloc[2:10]
 	addresses_frame = example_addresses[['id','Address','City','State','Zip']]
 	example_addresses['geocode'] = geo.Census.get_batch_geocode(addresses_frame)
+	adi = geo.ADI()
+	example_addresses['quintile'] =  adi.get_quintile_for_geocodes_frame(example_addresses, 'geocode')
 	print(example_addresses)
-	exit()
-	
-
-	# Create a column for ADI quintiles
-	
-	adi = geo.ADI()
-
-	geocode_ = geo.Census.get_geocode_for_address("1710 WEST SCHILLING ROAD","Salina","KS")
-	geocode_quintile = adi.get_quintile_for_geocode(geocode_)
-	print(geocode_quintile)
-	print(geocode_)
-	exit()
-	
-	adi = geo.ADI()
-
-	quintiles = adi.get_quintile_for_geocodes_frame(example_addresses, 'geocode')
-	print(quintiles)
 	exit()
 
 

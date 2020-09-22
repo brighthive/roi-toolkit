@@ -162,22 +162,21 @@ class ADI (object):
 
 		adi_ranks_only = self.adi_frame[['fips', 'adi_quintile']]
 		geocodes_merged = dataframe.merge(adi_ranks_only, left_on=geocode_column_name, right_on='fips', how='left', indicator=True)
-		print(geocodes_merged)
-		exit()
+
 
 		# count up the merges
 		count_merged = np.sum(geocodes_merged._merge == "both")
 		count_unmerged = len(dataframe) - count_merged
 		print("Geocode merge: Merged {} of {} observations in input dataframe ({}%)".format(str(count_merged), str(count_unmerged), str(round(100*count_merged/len(dataframe), 2))))
 
-		# a little bit of error handline
+		# a little bit of error handling
 		if (count_merged == 0):
 			print ("Merged 0 of {} observations in input dataframe! Make sure that geocodes have been read in the correct format and watch out for the removal of leading zeroes!".format(str(len(dataframe))))
 
 		del geocodes_merged['_merge']
 		del geocodes_merged['fips']
 
-		return(geocodes_merged)
+		return(geocodes_merged['adi_quintile'].to_numpy())
 
 class Census:
 
