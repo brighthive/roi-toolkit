@@ -47,7 +47,7 @@ class WageRecord(object):
 		unit_column_list = list(unit_column)
 
 		if (is_numeric_dtype(unit_column)):
-			warnings.warn("Column '{}' is numeric. Are you sure you want to calculate wage statistics across this variable? For human readability, it is advisable to use string or factor variables.".format(unit_of_analysis))
+			warnings.warn("Column '{}' is numeric. Are you sure you want to calculate wage statistics across this variable? For human readability, it is advisable to use unique string or factor variables.".format(unit_of_analysis))
 
 		# Identify if groups have fewer than min_group_size elements and create an attribute with group counts for later reference
 		count_per_group = self.data.groupby(unit_of_analysis, as_index=False)[self.unique_identifier].count().rename(columns={self.unique_identifier:"count"})

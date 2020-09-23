@@ -39,6 +39,10 @@ class Utilities:
 		cut_series = pd.cut(pandas_series, bins=[0,18,25,34,54,64,150], right=True, labels=['18 and under','19-25','26-34','35-54','55-64','65+']).astype(str)
 		return(cut_series)
 
+class Earnings_ROI:
+	def calculate(net_price_series, earnings_series):
+		return(None)
+
 
 class Premium(object):
 	"""

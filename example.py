@@ -111,18 +111,11 @@ if __name__ == "__main__":
 	example_addresses['geocode'] = geo.Census.get_batch_geocode(addresses_frame)
 	adi = geo.ADI()
 	example_addresses['quintile'] =  adi.get_quintile_for_geocodes_frame(example_addresses, 'geocode')
-	print(example_addresses)
-	exit()
 
-
-
-	# create wage record from microdata
-	test_records = records.WageRecord(data = test_microdata, unique_identifier="id", unit_of_analysis="program")
-
-
-	exit()
-
-	print(test_microdata)
+	# get inequality across quintiles
+	groups, values = equity.dataframe_groups_to_ndarray(example_addresses, 'quintile', 'earnings_end')
+	ratio = equity.ANOVA.Ratio(groups, values)
+	print(ratio)
 	exit()
 
 	
@@ -136,26 +129,6 @@ if __name__ == "__main__":
 	print(predicted_wages)
 	exit()	
 
-	'''
-	#baselines = cps.rudimentary_hs_baseline(8)
-
-	exit()
-	test_microdata = pd.read_csv("data/test_microdata.csv")
-	premium_calc = Earnings_Premium.calculate(test_microdata, 'earnings_start', 'earnings_end', 'program_start', 'program_end','age','state')
-
-	print(premium_calc)
-	exit()
-	'''
-
-	#x = abs(np.random.uniform(0,100,100000))
-	x = np.concatenate([np.repeat(1,1000), np.repeat(200,2000)])
-	y = np.concatenate([np.repeat(13,1000), np.repeat(2,10000)])
-
-	z = [x,y]
-	answer_T = Theil_T.Calculate_Ratio(z)
-	answer_L = Theil_L.Calculate_Ratio(z)
-	print(answer_T)
-	print(answer_L)
 
 	# decomposition background
 	# http://siteresources.worldbank.org/PGLP/Resources/PMch6.pdf
