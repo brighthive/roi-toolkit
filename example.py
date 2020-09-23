@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from roi import earnings, types, macrostats, get_data, equity, geo
+from roi import earnings, types, macrostats, get_data, equity, geo, utilities
 from datetime import date
 import sys
 #print(sys.modules.keys())
@@ -23,6 +23,8 @@ class Earnings_Premium:
 		return(wage_change)
 
 if __name__ == "__main__":
+
+	programs_data = pd.read_csv("testing/testing-data/programs.csv")
 
 	test_microdata = pd.read_csv("testing/testing-data/test_microdata.csv")
 	test_microdata['age_at_start'] = test_microdata['age'] - (date.today().year - test_microdata['program_start'])
@@ -119,6 +121,9 @@ if __name__ == "__main__":
 	exit()
 	'''
 	# Read in programs data and create a Programs object
+	programs = types.Programs(programs_data, "programs", "degree", program_length='length')
+	program_length = programs_data['length']
+	exit()
 
 	# Read in wage record data and create a WageRecord object
 	records = types.WageRecord(test_microdata, 'id', 'program')

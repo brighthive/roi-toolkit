@@ -31,7 +31,7 @@ class Summary(object):
 		return(None)
 
 	def earnings_summaries(self, grouping_factors):
-		grouped = self.frame_.groupby(grouping_factors, as_index=False)[self.earnings_column].agg({'n':np.size,'mean':np.mean, 'median':np.median, 'sd':np.std})
+		grouped = self.frame_.groupby(grouping_factors, as_index=False)[self.earnings_column].agg({'n':np.size,'mean':np.mean, 'median':np.median, 'sd':np.std, 'min':np.min, 'max':np.max})
 		return(grouped)
 
 class Utilities:
