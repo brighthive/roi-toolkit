@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from roi import earnings, records, macrostats, get_data, equity, geo
+from roi import earnings, types, macrostats, get_data, equity, geo
 from datetime import date
 import sys
 #print(sys.modules.keys())
@@ -104,7 +104,7 @@ if __name__ == "__main__":
 	#example_address = test_microdata.iloc[0]
 	#geocode = geo.Census.get_geocode_for_address(example_address['Address'], example_address['City'], example_address['State'])
 	#print(geocode)
-
+	'''
 	# Batch geocode addresses and fetch SES quintiles
 	example_addresses = test_microdata.iloc[2:10]
 	addresses_frame = example_addresses[['id','Address','City','State','Zip']]
@@ -117,6 +117,12 @@ if __name__ == "__main__":
 	ratio = equity.ANOVA.Ratio(groups, values)
 	print(ratio)
 	exit()
+	'''
+	# Read in programs data and create a Programs object
+
+	# Read in wage record data and create a WageRecord object
+	records = types.WageRecord(test_microdata, 'id', 'program')
+	exit()	
 
 	
 	cps = earnings.CPS_Ops()

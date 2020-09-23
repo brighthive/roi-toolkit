@@ -3,12 +3,7 @@ from roi.settings import *
 from pandas.api.types import is_numeric_dtype
 import warnings
 
-class WageRecord(object):
-	def __init__(self, data, unique_identifier, unit_of_analysis):
-		self._validate_dataframe(data)
-		self._validate_identifier(unique_identifier)
-		self._validate_unit(unit_of_analysis)
-
+class Validator:
 	def _validate_dataframe(self, data):
 		"""
 		Check to see if data passed is a DataFrame. If not, throw error.
@@ -16,24 +11,44 @@ class WageRecord(object):
 		if isinstance(data, pd.DataFrame):
 			self.data = data
 		else:
-			raise TypeError("WageRecord objects must be instantiated with a Pandas DataFrame. Argument passed was {}".format(type(data)))
+			raise TypeError("Objects must be instantiated with a Pandas DataFrame. Argument passed was {}".format(type(data)))
 		return None
 
 	def _validate_identifier(self, identifier):
 		"""
-		Ensure that there is one row per individual, based on a unique identifier column.
+		Ensure that there is one row per item, based on a unique identifier column.
 		This method exists to ensure a best practice of including such a unique identifier column.
 		It can be overridden by passing the dataframe's index column. This is not recommended.
 		"""
-		rows_in_dataframe = len(self.data)
-		unique_rows = len(set(self.data[identifier]))
 
-		if rows_in_dataframe == unique_rows:
+		if self.data[identifier].is_unique:
 			self.unique_identifier = identifier
 		else:
 			raise Exception("Argument unique_identifier must uniquely identify rows in passed dataframe. Identifier '{}' has {} unique values for {} rows".format(identifier, str(unique_rows), str(rows_in_dataframe)))
 
 		return None
+
+	@staticmethod
+	def readability_check(series):
+		if (is_numeric_dtype(series)):
+			warnings.warn("Column '{}' is numeric. Are you sure you want to calculate wage statistics across this variable? For human readability, it is advisable to use unique string or factor variables.".format(series.name))
+		return(None)		
+
+
+class Programs(Validator):
+	def __init__(self, dataframe, unique_identifier, certification_granted, program_length=None, program_cost=None):
+		self._validate_dataframe(data)
+		self._validate_identifier(unique_identifier)
+
+	def checkcert(self):
+		return(None)
+
+
+class WageRecord(Validator):
+	def __init__(self, data, unique_identifier, unit_of_analysis):
+		self._validate_dataframe(data)
+		self._validate_identifier(unique_identifier)
+		self._validate_unit(unit_of_analysis)
 
 	def _validate_unit(self, unit_of_analysis):
 		"""
@@ -46,8 +61,7 @@ class WageRecord(object):
 		unit_column = self.data[unit_of_analysis]
 		unit_column_list = list(unit_column)
 
-		if (is_numeric_dtype(unit_column)):
-			warnings.warn("Column '{}' is numeric. Are you sure you want to calculate wage statistics across this variable? For human readability, it is advisable to use unique string or factor variables.".format(unit_of_analysis))
+		self.readability_check(unit_column)
 
 		# Identify if groups have fewer than min_group_size elements and create an attribute with group counts for later reference
 		count_per_group = self.data.groupby(unit_of_analysis, as_index=False)[self.unique_identifier].count().rename(columns={self.unique_identifier:"count"})
