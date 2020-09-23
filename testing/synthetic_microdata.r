@@ -1,3 +1,16 @@
+setwd('/Users/mattlerner/roi/sbir-roi/testing/testing-data')
+
+####### Create programs data #########
+
+# 7 sample programs
+programs <- c("Electrical Engineering", "Art History", "Economics", "Anthropology", "Biology", "French Literature", "Philosophy")
+degree <- c("BA","BA","MA","BA","AS","MA","BA")
+length <- c(8,8,4,4,3,5,8)
+cost_per_semester <- c(5000,7000,10000,4500,3000,6000,8000)
+programs_frame <- data.frame(programs, degree, length, cost_per_semester)
+write.csv(programs_frame, "programs.csv")
+
+
 ####### Summ
 
 setwd('/Users/mattlerner/roi/sbir-roi/testing/testing-data')
