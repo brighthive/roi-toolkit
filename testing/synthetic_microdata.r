@@ -1,5 +1,7 @@
 setwd('/Users/mattlerner/roi/sbir-roi/testing/testing-data')
 
+library(sigmoid)
+
 ####### Create programs data #########
 
 # 7 sample programs
@@ -17,7 +19,7 @@ setwd('/Users/mattlerner/roi/sbir-roi/testing/testing-data')
 
 races = c("Martian", "Venusian", "Earthling", "Neptunian")
 gender = c("Wan", "Moman")
-programs = c("Electrical Engineering", "Art History", "Underwater Basket-Weaving")
+programs <- c("Electrical Engineering", "Art History", "Economics", "Anthropology", "Biology", "French Literature", "Philosophy")
 education.levels = c(0, 60, 73, 81, 92, 111, 123, 124, 125)
 
 combos <- expand.grid(race=races, gender=gender, program=programs, education.level=education.levels)
@@ -34,7 +36,9 @@ for (i in 1:nrow(combos)) {
   program_start <- round(rnorm(number.in.group, 2014,2),0)
   program_end <- round(program_start + abs(rnorm(number.in.group, 2, 2)),0)
   ages[ages < 18] <- 18
-  frame_ <- cbind(race = as.character(rep(combos[i, 'race'],number.in.group)), gender = as.character(rep(combos[i, 'gender'],number.in.group)), earnings_start = earnings_start, earnings_end = earnings_end, age = ages, program=as.character(rep(combos[i, 'program'],number.in.group)), program_start=program_start, program_end=program_end, education_level=combos[i, 'education.level'])
+  completer <- rbinom(number.in.group, 1, rbeta(1,4,1))
+  employed_at_end <- round(sigmoid(completer*2 + rnorm(number.in.group,0,0.2))) # employment as a partial function 
+  frame_ <- cbind(race = as.character(rep(combos[i, 'race'],number.in.group)), gender = as.character(rep(combos[i, 'gender'],number.in.group)), earnings_start = earnings_start, earnings_end = earnings_end, age = ages, program=as.character(rep(combos[i, 'program'],number.in.group)), program_start=program_start, program_end=program_end, education_level=combos[i, 'education.level'], completer=completer, employed_at_end=employed_at_end)
   frames_ <- rbind(frames_, frame_)
 }
 
