@@ -40,6 +40,7 @@ class CPS_Ops(object):
 		self.hs_grads_only = self.microdata[self.microdata.hs_education_at_most == True]
 		self.get_all_mean_wages()
 		self.get_hs_grads_mean_wages()
+		self.get_cpi_adjustment_range()
 
 	def get_all_mean_wages(self):
 		# Return a dataframe containing mean wages by year, state and age group
@@ -53,6 +54,12 @@ class CPS_Ops(object):
 		mean_wages = self.hs_grads_only.groupby(['YEAR','STATEFIP','age_group']).apply(lambda x: pd.Series({"mean_INCWAGE":np.sum(x['INCWAGE_99'] * x['ASECWT'])/np.sum(x['ASECWT'])})).reset_index()
 		self.hs_grads_mean_wages = mean_wages
 		mean_wages.to_csv("{}/hs_grads_mean_wages.csv".format(data_directory), index=False)
+		return None
+
+	def get_cpi_adjustment_range(self):
+		bls_api = BLS_API()
+		cpi_range = bls_api.get_cpi_adjustment_range(self.base_year - 19, self.base_year) # need to be connected to the internet to fetch BLS data
+		cpi_range.to_csv("{}/cpi_adjustment_range.csv".format(data_directory), index=False)
 		return None
 
 	def get_mean_wage_by_ed_level(self, prereq_educ_level, program_educ_level, statefip):

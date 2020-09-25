@@ -132,3 +132,7 @@ class WageRecord(Validator):
 		self.unit = unit_of_analysis
 
 		return None
+
+	@classmethod
+	def from_education_and_wage(WageRecord_object, Programs_Object, Student_Object, Wage_Object):
+		return(None)

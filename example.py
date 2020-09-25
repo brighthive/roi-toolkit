@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from roi import earnings, types, macrostats, get_data, equity, geo, utilities
+from roi import earnings, types, macrostats, get_data, equity, geo, utilities, completion, employment
 from datetime import date
 import sys
 #print(sys.modules.keys())
@@ -120,14 +120,28 @@ if __name__ == "__main__":
 	print(ratio)
 	exit()
 	'''
-	# Read in programs data and create a Programs object
-	programs = types.Programs(programs_data, "programs", "degree", program_length='length')
-	program_length = programs_data['length']
+	# Read in data and create objects
+	# programs = types.Programs(programs_data, "programs", "degree", program_length='length')
+	# records = types.WageRecord(test_microdata, 'id', 'program')
+
+	# Completion
+	'''
+	completion = completion.Completion(test_microdata, 'program', 'program_start', 'program_end', 'completer')
+	print(completion.completion_rates)
+	print(completion.time_to_completion)
+	'''
+
+	bls_api = macrostats.BLS_API("c8803d0ba66c4592b8b0eff68ac9ebb30")
+	cpi_range = bls_api.get_cpi_adjustment_range(2002, 2005) # need to be connected to the internet to fetch BLS data
+	print(cpi_range)
 	exit()
 
-	# Read in wage record data and create a WageRecord object
-	records = types.WageRecord(test_microdata, 'id', 'program')
-	exit()	
+	# Employment
+	employment = employment.Employment_Likelihood(test_microdata, 'program', 'program_start', 'program_end', 'employed_at_end', 'employed_at_start','age_group_at_start')
+	print(employment.raw_likelihood_at_end)
+	print(employment.raw_likelihood_change)
+	exit()
+
 
 	
 	cps = earnings.CPS_Ops()
