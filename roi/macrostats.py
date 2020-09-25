@@ -41,8 +41,6 @@ LE + seasonal adjustment code[1 - U/S] + ?[1] + lfst_code[2] + ?[5] ?[2]
 
 example_response = '{"status":"REQUEST_SUCCEEDED","responseTime":137,"message":[],"Results":{\n"series":\n[{"seriesID":"LAUST080000000000006","data":[{"year":"2019","period":"M10","periodName":"October","latest":"true","value":"3178070","footnotes":[{"code":"P","text":"Preliminary."}]},{"year":"2019","period":"M09","periodName":"September","value":"3177825","footnotes":[{}]},{"year":"2019","period":"M08","periodName":"August","value":"3173865","footnotes":[{}]},{"year":"2019","period":"M07","periodName":"July","value":"3189419","footnotes":[{}]},{"year":"2019","period":"M06","periodName":"June","value":"3186284","footnotes":[{}]},{"year":"2019","period":"M05","periodName":"May","value":"3127934","footnotes":[{}]},{"year":"2019","period":"M04","periodName":"April","value":"3119039","footnotes":[{}]},{"year":"2019","period":"M03","periodName":"March","value":"3123249","footnotes":[{}]},{"year":"2019","period":"M02","periodName":"February","value":"3132592","footnotes":[{}]},{"year":"2019","period":"M01","periodName":"January","value":"3118999","footnotes":[{}]},{"year":"2018","period":"M13","periodName":"Annual","value":"3096358","footnotes":[{}]},{"year":"2018","period":"M12","periodName":"December","value":"3136729","footnotes":[{}]},{"year":"2018","period":"M11","periodName":"November","value":"3133401","footnotes":[{}]},{"year":"2018","period":"M10","periodName":"October","value":"3135286","footnotes":[{}]},{"year":"2018","period":"M09","periodName":"September","value":"3124018","footnotes":[{}]},{"year":"2018","period":"M08","periodName":"August","value":"3114611","footnotes":[{}]},{"year":"2018","period":"M07","periodName":"July","value":"3126894","footnotes":[{}]},{"year":"2018","period":"M06","periodName":"June","value":"3115771","footnotes":[{}]},{"year":"2018","period":"M05","periodName":"May","value":"3071539","footnotes":[{}]},{"year":"2018","period":"M04","periodName":"April","value":"3060983","footnotes":[{}]},{"year":"2018","period":"M03","periodName":"March","value":"3056824","footnotes":[{}]},{"year":"2018","period":"M02","periodName":"February","value":"3054983","footnotes":[{}]},{"year":"2018","period":"M01","periodName":"January","value":"3025258","footnotes":[{}]},{"year":"2017","period":"M13","periodName":"Annual","value":"2992412","footnotes":[{}]},{"year":"2017","period":"M12","periodName":"December","value":"3022280","footnotes":[{}]},{"year":"2017","period":"M11","periodName":"November","value":"3027893","footnotes":[{}]},{"year":"2017","period":"M10","periodName":"October","value":"3030716","footnotes":[{}]},{"year":"2017","period":"M09","periodName":"September","value":"3035085","footnotes":[{}]},{"year":"2017","period":"M08","periodName":"August","value":"3019660","footnotes":[{}]},{"year":"2017","period":"M07","periodName":"July","value":"3019734","footnotes":[{}]},{"year":"2017","period":"M06","periodName":"June","value":"3007314","footnotes":[{}]},{"year":"2017","period":"M05","periodName":"May","value":"2966441","footnotes":[{}]},{"year":"2017","period":"M04","periodName":"April","value":"2957983","footnotes":[{}]},{"year":"2017","period":"M03","periodName":"March","value":"2952018","footnotes":[{}]},{"year":"2017","period":"M02","periodName":"February","value":"2945602","footnotes":[{}]},{"year":"2017","period":"M01","periodName":"January","value":"2924216","footnotes":[{}]}]}]\n}}'
 
-BLS_API_KEY = os.getenv('BLS_API_KEY') # unnecessary for BLS series 1.0 api but series 2 API overcomes #extreme rate limiting
-
 class Parameters:
 	BLS_measure_codes = {
 		"unemployment rate": "03",
@@ -72,7 +70,19 @@ class BLS_API:
 		https://www.bls.gov/developers/api_faqs.htm
 
 	"""
-	def get_cpi(prefix="CU", seasonal_adjustment_code="S", periodicity="R", area_code="0000", base_code="S", item_code="A0"):
+	def __init__(self, bls_api_key = None):
+
+		if (bls_api_key is None):
+			bls_api_key = os.getenv('BLS_API_KEY') # unnecessary for BLS series 1.0 api but series 2 API overcomes #extreme rate limiting
+		else:
+			pass
+
+		if len(bls_api_key) == 0:
+			raise NameError("The BLS_API class requires that you provide an API key to the Bureau of Labor Statistics API. You can pass this key directly when instantiating the class (e.g. BLS_API(YOUR_KEY_HERE) or (preferably) by setting an environment variable called BLS_API_KEY. For more information please see the BLS API docs at:\nhttps://www.bls.gov/developers/api_faqs.htm")
+		else:
+			self.bls_api_key = bls_api_key
+
+	def get_cpi(self, prefix="CU", seasonal_adjustment_code="S", periodicity="R", area_code="0000", base_code="S", item_code="A0"):
 		"""
 
 		Form sequence ID for the CPI-U: The Consumer Price Index for Urban Consumers.
@@ -91,7 +101,7 @@ class BLS_API:
 		series_id = prefix + seasonal_adjustment_code + periodicity + area_code + base_code + item_code
 		return series_id
 
-	def employment_series_id(prefix="LA", seasonal_adjustment_code="U", state_code="08", measure_code="employment"):
+	def employment_series_id(self, prefix="LA", seasonal_adjustment_code="U", state_code="08", measure_code="employment"):
 		"""
 
 		Form Series ID for Local Area Unemplyoment statistics (prefix LA) from the BLS.
@@ -112,7 +122,7 @@ class BLS_API:
 		series_id = prefix + seasonal_adjustment_code + area_code + measure_code
 		return series_id
 
-	def wage_series_id(prefix="SM", seasonal_adjustment_code="U", state_code="08", area_code="00000", industry_code="05000000", data_type_code="11"):
+	def wage_series_id(self, prefix="SM", seasonal_adjustment_code="U", state_code="08", area_code="00000", industry_code="05000000", data_type_code="11"):
 		"""
 
 		Form Series ID for ____________ statistics (prefix SM) from the BLS. 
@@ -131,7 +141,7 @@ class BLS_API:
 		series_id = prefix + seasonal_adjustment_code + state_code + area_code + industry_code + data_type_code
 		return series_id
 
-	def get_series(seriesid, startyear, endyear, api_key=BLS_API_KEY):
+	def get_series(self, seriesid, startyear, endyear):
 		"""
 
 		Fetch API response from BLS API.
@@ -155,13 +165,13 @@ class BLS_API:
 		string containing API response as JSON
 
 		"""
-
+		api_key = self.bls_api_key
 		url = ("https://api.bls.gov/publicAPI/v2/timeseries/data/{}?startyear={}&endyear={}&registrationkey={}".format(seriesid, str(startyear), str(endyear), api_key))
 		response = requests.get(url)
 		content = response.content
 		return content
 
-	def parse_api_response(json_response):
+	def parse_api_response(self, json_response):
 		"""
 
 		Take the response from the BLS API, passed as a string, parse the JSON, remove excess columns, and convert dates to datetimes.
@@ -191,7 +201,7 @@ class BLS_API:
 
 		return(data_frame)
 
-	def get_cpi_adjustment(start_year, end_year):
+	def get_cpi_adjustment(self, start_year, end_year):
 		"""
 		For any pair of years, return the CPI adjustment factor for that pair of years. E.g. if the adjustment factor between
 		2000 and 2020 is 1.5, then $100 in 2000 is roughly equal in value to $150 in 2020. 
@@ -215,13 +225,13 @@ class BLS_API:
 		Float representing adjustment factor
 
 		"""
-		series_id = BLS_API.get_cpi()
-		series_start = BLS_API.get_series(series_id, start_year, start_year)
-		series_end = BLS_API.get_series(series_id, end_year, end_year)
+		series_id = self.get_cpi()
+		series_start = self.get_series(series_id, start_year, start_year)
+		series_end = self.get_series(series_id, end_year, end_year)
 
 		try:
-			start_frame = BLS_API.parse_api_response(series_start)
-			end_frame = BLS_API.parse_api_response(series_end)
+			start_frame = self.parse_api_response(series_start)
+			end_frame = self.parse_api_response(series_end)
 			start_cpi = start_frame.loc[start_frame.periodName == "January", "value"].iat[0]
 			end_cpi = end_frame.loc[end_frame.periodName == "January", "value"].iat[0]
 		except Exception as e:
@@ -231,7 +241,7 @@ class BLS_API:
 		adjustment = end_cpi/start_cpi
 		return(adjustment)
 
-	def get_cpi_adjustment_range(start_year, end_year):
+	def get_cpi_adjustment_range(self, start_year, end_year):
 		"""
 		This is identical to get_cpi_adjustment() except it returns the CPI indices for the given range, so it returns a dataframe
 		Remember - it takes a maximum of twenty years!
@@ -253,15 +263,15 @@ class BLS_API:
 		if (int(end_year) - int(start_year) > 20):
 			raise Exception("get_cpi_adjustment_range({}, {}) offered more than 20 years of data; API returns only 20 years".format(str(start_year), str(end_year)))
 
-		series_id = BLS_API.get_cpi()
-		series = BLS_API.get_series(series_id, start_year, end_year)
-		series_frame = BLS_API.parse_api_response(series)
+		series_id = self.get_cpi()
+		series = self.get_series(series_id, start_year, end_year)
+		series_frame = self.parse_api_response(series)
 		series_frame_reduced = series_frame[series_frame.periodName == "January"].rename(columns={"value":"cpi"})[['year','cpi']]
 		series_frame_reduced['year'] = series_frame_reduced['year'].astype(int)
 
 		return(series_frame_reduced)
 
-	def cpi_adjust_frame(frame_, wage_column, wage_year_column, year=date.today().year):
+	def cpi_adjust_frame(self, frame_, wage_column, wage_year_column, year=date.today().year):
 		"""
 		This adjusts all wages to the current year's wages by default (though it will do whatever you tell it to!)
 		It takes a frame and returns the original frame with the adjusted wages and the adjustment factors used.
@@ -285,7 +295,7 @@ class BLS_API:
 		Original dataframe with "adjusted_wage" columns and "adjustment_factor" columns (self-explanatory).
 
 		"""
-		adjustment_frame = BLS_API.get_cpi_adjustment_range(year - 20, year)
+		adjustment_frame = self.get_cpi_adjustment_range(year - 20, year)
 		current_year_cpi = adjustment_frame.loc[adjustment_frame.year == year, 'cpi'].iat[0]
 		adjusted_frame = frame_.merge(adjustment_frame, left_on=wage_year_column, right_on='year', how='left')
 		adjusted_frame['adjustment_factor'] = current_year_cpi/cpi

@@ -1,13 +1,6 @@
 import pandas as pd
 import numpy as np
 
-class Equity_Assessment(object):
-	"""
-	This class takes a dataframe and produces objects useful for evaluating equity concerns.
-	"""
-	def __init__(self, dataframe, variable_of_concern, group):
-		return(None)
-
 def dataframe_groups_to_ndarray(dataframe, groupby_columns, value_to_groups):
 	"""
 	This method takes a pandas dataframe and yields a numpy array of arrays containing values split up by group.
