@@ -16,9 +16,7 @@ class Employment_Likelihood:
 		change = utilities.Summaries.summary_by_group(dataframe, program_identifier, 'empchange')
 		return(change)
 
-	def _fetch_macro_correction():
-		default_start_month = 9
-		default_end_month = 6
+	def _fetch_macro_correction(dataframe, entry_year, entry_month, exit_year, exit_month):
 		return(None)
 
 	def _calculate_employment_premium():
