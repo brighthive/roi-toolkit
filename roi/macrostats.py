@@ -271,6 +271,21 @@ class BLS_API:
 
 		return(series_frame_reduced)
 
+	def get_employment_data(self, start_year, end_year, measure):
+		# measure must be one of ["employment", "labor force"]
+		series_id = self.employment_series_id(measure_code=measure)
+		raw_response = self.get_series(series_id, start_year, end_year)
+		employment = self.parse_api_response(raw_response)
+		return(employment)
+
+
+	def get_wage_data(self, start_year, end_year):
+		series_id = self.wage_series_id()
+		raw_response = self.get_series(series_id, start_year, end_year)
+		print(raw_response)
+		wage = self.parse_api_response(raw_response)
+		return(wage)
+
 	def cpi_adjust_frame(self, frame_, wage_column, wage_year_column, year=date.today().year):
 		"""
 		This adjusts all wages to the current year's wages by default (though it will do whatever you tell it to!)
@@ -423,7 +438,7 @@ class Adjustments:
 
 		if unmerged_len > 0:
 			warnings.warn("{} rows in column {} could not be merged with provided CPI data. Please note that (1) the BLS API provides only up to 20 years of data; if you want to use more, you will have to manually combine multiple queries. (2) We do not recommend using more than ten years of historical data in calculations.".format(unmerged_len, year_column_name))
-			print("Years in provided dataframe for which there is no index in the provided CPI frame:\n")
+			print("Years in provided dataframe for which there is no data in the provided CPI frame:\n")
 			print(set(frame_merged.loc[frame_merged['_merge'] == "left_only", year_column_name]))
 
 		# adjust and return
@@ -437,7 +452,8 @@ if __name__ == "__main__":
 	cpi_data = BLS_API.get_cpi_adjustment_range(2000,2019)
 	print(cpi_data)
 	exit()
-	
+
+
 	# series ids
 	employment_series_id = BLS_API.employment_series_id(measure_code="employment")
 	labor_force_series_id = BLS_API.employment_series_id(measure_code="labor force")

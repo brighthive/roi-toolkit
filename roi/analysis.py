@@ -19,3 +19,7 @@ class Equity_Assessment(object):
 	"""
 	def __init__(self, dataframe, variable_of_concern, group):
 		return(None)
+
+class Discounted_Total_Earnings:
+	def __init__(self, dataframe, mincer_params, future_years, discount_rate):
+		return(None)

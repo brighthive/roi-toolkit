@@ -131,7 +131,11 @@ if __name__ == "__main__":
 	print(completion.time_to_completion)
 	'''
 
-	bls_api = macrostats.BLS_API("c8803d0ba66c4592b8b0eff68ac9ebb30")
+	bls_api = macrostats.BLS_API()
+	employment = bls_api.get_employment_data(2002,2005, "employment")
+	wage = bls_api.get_wage_data(2014,2018)
+	print(wage)
+	exit()
 	cpi_range = bls_api.get_cpi_adjustment_range(2002, 2005) # need to be connected to the internet to fetch BLS data
 	print(cpi_range)
 	exit()
