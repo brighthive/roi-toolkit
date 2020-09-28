@@ -1,25 +1,8 @@
 import numpy as np
 import pandas as pd
 
-class Summaries:
-
-	def summary_by_group(frame_, grouping_factors, column_to_aggregate):
-		grouped = frame_.groupby(grouping_factors, as_index=False)[column_to_aggregate].agg({'n':np.size,'mean':np.mean, 'median':np.median, 'sd':np.std, 'min':np.min, 'max':np.max})
-		return(grouped)
-
-
-class Dates:
-
-	def combine(year_series, month_series):
-		return(None)
-
-	def separate(year_and_month_column):
-		return(None)
-
-
-def State_To_FIPS(state_abbreviation):
-	# hardcoded - FIPS aren't changing anytime soon
-	crosswalk = {
+class Data:
+	state_crosswalk = {
 		"AL":1,
 		"AK":2,
 		"AZ":4,
@@ -73,8 +56,28 @@ def State_To_FIPS(state_abbreviation):
 		"WV":54
 	}
 
+
+class Summaries:
+
+	def summary_by_group(frame_, grouping_factors, column_to_aggregate):
+		grouped = frame_.groupby(grouping_factors, as_index=False)[column_to_aggregate].agg({'n':np.size,'mean':np.mean, 'median':np.median, 'sd':np.std, 'min':np.min, 'max':np.max})
+		return(grouped)
+
+
+class Dates:
+
+	def combine(year_series, month_series):
+		return(None)
+
+	def separate(year_and_month_column):
+		return(None)
+
+
+def State_To_FIPS(state_abbreviation):
+	crosswalk = Data.state_crosswalk
+	# hardcoded - FIPS aren't changing anytime soon
 	if state_abbreviation not in crosswalk.keys():
-		raise ValueError("{} is not a valid state abbreviation. State_To_FIPS() requires an abbreviation like CA.".format(state_abbreviation))
+		raise ValueError("{} is not a valid state abbreviation. State_To_FIPS() requires an abbreviation like CA and is case-sensitive.".format(state_abbreviation))
 	else:
 		return(crosswalk[state_abbreviation])
 

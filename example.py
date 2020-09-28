@@ -132,9 +132,9 @@ if __name__ == "__main__":
 	'''
 
 	bls_api = macrostats.BLS_API()
-	employment = bls_api.get_employment_data(2002,2005, "employment")
-	wage = bls_api.get_wage_data(2014,2018)
-	print(wage)
+	employment = bls_api.get_employment_data(state_code="08", start_year=2002,end_year=2005, measure="employment")
+	wage = bls_api.get_wage_data(8,2014,2018)
+	print(employment)
 	exit()
 	cpi_range = bls_api.get_cpi_adjustment_range(2002, 2005) # need to be connected to the internet to fetch BLS data
 	print(cpi_range)

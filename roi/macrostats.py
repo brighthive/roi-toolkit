@@ -74,11 +74,10 @@ class BLS_API:
 
 		if (bls_api_key is None):
 			bls_api_key = os.getenv('BLS_API_KEY') # unnecessary for BLS series 1.0 api but series 2 API overcomes #extreme rate limiting
-		else:
-			pass
-
-		if len(bls_api_key) == 0:
-			raise NameError("The BLS_API class requires that you provide an API key to the Bureau of Labor Statistics API. You can pass this key directly when instantiating the class (e.g. BLS_API(YOUR_KEY_HERE) or (preferably) by setting an environment variable called BLS_API_KEY. For more information please see the BLS API docs at:\nhttps://www.bls.gov/developers/api_faqs.htm")
+			if bls_api_key is None:
+				raise NameError("The BLS_API class requires that you provide an API key to the Bureau of Labor Statistics API. You can pass this key directly when instantiating the class (e.g. BLS_API(YOUR_KEY_HERE) or (preferably) by setting an environment variable called BLS_API_KEY. For more information please see the BLS API docs at:\nhttps://www.bls.gov/developers/api_faqs.htm")
+			else:
+				self.bls_api_key = bls_api_key
 		else:
 			self.bls_api_key = bls_api_key
 
@@ -101,7 +100,7 @@ class BLS_API:
 		series_id = prefix + seasonal_adjustment_code + periodicity + area_code + base_code + item_code
 		return series_id
 
-	def employment_series_id(self, prefix="LA", seasonal_adjustment_code="U", state_code="08", measure_code="employment"):
+	def employment_series_id(self, state_code, prefix="LA", seasonal_adjustment_code="U", measure_code="employment"):
 		"""
 
 		Form Series ID for Local Area Unemplyoment statistics (prefix LA) from the BLS.
@@ -117,12 +116,19 @@ class BLS_API:
 		A string containing the a Series ID, to be passed to the BLS API.
 
 		"""
+		if not isinstance(state_code, str):
+			warnings.warn("State codes, though integers, should be passed as strings. Something else was passed. Attempting to coerce to string.")
+			try:
+				state_code = str(state_code).zfill(2) # left pad with zeroes to align with FIP codes
+			except Exception as e:
+				print("Couldn't coerce state code to string: {}".format(e))
+
 		area_code = "ST{}00000000000".format(state_code)
 		measure_code = Parameters.BLS_measure_codes[measure_code]
 		series_id = prefix + seasonal_adjustment_code + area_code + measure_code
 		return series_id
 
-	def wage_series_id(self, prefix="SM", seasonal_adjustment_code="U", state_code="08", area_code="00000", industry_code="05000000", data_type_code="11"):
+	def wage_series_id(self, state_code, prefix="SM", seasonal_adjustment_code="U", area_code="00000", industry_code="05000000", data_type_code="11"):
 		"""
 
 		Form Series ID for ____________ statistics (prefix SM) from the BLS. 
@@ -137,6 +143,15 @@ class BLS_API:
 		A string containing the a Series ID, to be passed to the BLS API.
 
 		"""
+
+		if not isinstance(state_code, str):
+			warnings.warn("State codes, though integers, should be passed as strings. Something else was passed. Attempting to coerce to string.")
+			try:
+				state_code = str(state_code).zfill(2) # left pad with zeroes to align with FIP codes
+				print("Success!")
+			except Exception as e:
+				print("Couldn't coerce to string: {}".format(e))
+
 		# data type 11 = average weekly earnings
 		series_id = prefix + seasonal_adjustment_code + state_code + area_code + industry_code + data_type_code
 		return series_id
@@ -194,7 +209,10 @@ class BLS_API:
 		data_frame = data_frame.drop(['footnotes', 'latest', 'period'], axis=1, errors='ignore')
 
 		# make sure value is float
-		data_frame['value'] = data_frame['value'].astype(float)
+		try:
+			data_frame['value'] = data_frame['value'].astype(float)
+		except:
+			raise Exception("parse_api_response() couldn't find 'value' in BLS API response. Printing raw response: {}".format(json_response))
 
 		# errors are coerced so that "Annual" dates go to NaN
 		data_frame['month_year'] = pd.to_datetime(data_frame.periodName + " " + data_frame.year, format='%B %Y', errors='coerce').astype('datetime64[M]')
@@ -271,18 +289,19 @@ class BLS_API:
 
 		return(series_frame_reduced)
 
-	def get_employment_data(self, start_year, end_year, measure):
+	def get_employment_data(self, state_code, start_year, end_year, measure):
+
 		# measure must be one of ["employment", "labor force"]
-		series_id = self.employment_series_id(measure_code=measure)
+		series_id = self.employment_series_id(state_code=state_code, measure_code=measure)
 		raw_response = self.get_series(series_id, start_year, end_year)
 		employment = self.parse_api_response(raw_response)
 		return(employment)
 
 
-	def get_wage_data(self, start_year, end_year):
-		series_id = self.wage_series_id()
+	def get_wage_data(self, state_code, start_year, end_year):
+
+		series_id = self.wage_series_id(state_code=state_code)
 		raw_response = self.get_series(series_id, start_year, end_year)
-		print(raw_response)
 		wage = self.parse_api_response(raw_response)
 		return(wage)
 
@@ -332,8 +351,6 @@ class Calculations:
 
 	def employment_change(bls_employment_table, bls_labor_force_table, start_month, end_month):
 		"""
-		METHODOLOGICAL NOTE: This currently returns change in employment without reference to labor force status change.
-
 		This function will probably have to be refactored as we move forward - this is basically just a skeleton.
 
 		Parameters:
