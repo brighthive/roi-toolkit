@@ -1,6 +1,7 @@
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 from roi.macrostats import BLS_API
+from roi import utilities, macrostats
 from datetime import date
 import pandas as pd
 import pickle
@@ -13,6 +14,9 @@ mincer_full_model_location = "data/models/mincer.pickle"
 # This directory is for summary data to be shipped with the module
 data_directory = "roi/data"
 mincer_model_params_location = "{}/mincer_params.pickle".format(data_directory)
+bls_employment_series_location = "{}/bls/bls_employment_series.csv".format(data_directory)
+bls_laborforce_series_location = "{}/bls/bls_laborforce_series.csv".format(data_directory)
+bls_wage_series_location = "{}/bls/bls_wage_series.csv".format(data_directory)
 
 class CPS_Ops(object):
 	"""
@@ -295,7 +299,55 @@ class CPS_Ops(object):
 
 		return(counterfactual_wage_growth)
 
+def fetch_bls_data():
+	# series IDs for last 20 years of employment data
+	start_year = 2002
+	end_year = 2019
+	bls = BLS_API()
+
+	employment_dataframe = pd.DataFrame()
+	wage_dataframe = pd.DataFrame()
+	labor_force_dataframe = pd.DataFrame()
+
+	for state_code in [1,2,3]:#utilities.Data.state_crosswalk.values():
+
+		emp_series_id = bls.employment_series_id(state_code=state_code)
+		emp_raw_response = bls.get_series(emp_series_id, start_year, end_year)
+
+		lf_series_id = bls.employment_series_id(state_code=state_code, measure_code="labor force")
+		lf_raw_response = bls.get_series(lf_series_id, start_year, end_year)
+
+		wage_series_id = bls.wage_series_id(state_code=state_code)
+		wage_raw_response = bls.get_series(wage_series_id, start_year, end_year)
+
+		try:
+			employment = bls.parse_api_response(emp_raw_response)
+			laborforce = bls.parse_api_response(lf_raw_response)
+			wage = bls.parse_api_response(wage_raw_response)
+		except Exception as E:
+			print("Failed fetching data for {}".format(state_code))
+			print(E)
+			continue
+
+		employment['state_code'] = state_code
+		laborforce['state_code'] = state_code
+		wage['state_code'] = state_code
+		employment_dataframe = employment_dataframe.append(employment)
+		wage_dataframe = wage_dataframe.append(wage)
+		labor_force_dataframe = labor_force_dataframe.append(laborforce)
+		print("Fetched BLS data for {}!".format(state_code))
+		
+	employment_dataframe.to_csv(bls_employment_series_location, index=False)
+	labor_force_dataframe.to_csv(bls_laborforce_series_location, index=False)
+	wage_dataframe.to_csv(bls_wage_series_location, index=False)
+
+	return(None)
+
 if __name__ == "__main__":
+
+	fetch_bls_data()
+	exit()
+
 	cps = CPS_Ops()
 	model = cps.fit_mincer_model()
 	exit()
