@@ -132,7 +132,14 @@ if __name__ == "__main__":
 	'''
 
 	bls_api = macrostats.BLS_API(query=False)
-	print(bls_api.bls_wage_series)
+	#bls_api.get_wage_data('08',2008,2012)
+
+	wages = bls_api.bls_wage_series
+	employment = bls_api.bls_employment_series
+	laborforce = bls_api.bls_laborforce_series
+	#change = macrostats.Calculations.wage_change(wages, "02", "2018-01","2019-01")
+	change = macrostats.Calculations.employment_change(employment, laborforce, "08", "2012-07","2018-10")
+	print(change)
 	exit()
 	employment = bls_api.get_employment_data(state_code="08", start_year=2002,end_year=2005, measure="employment")
 	wage = bls_api.get_wage_data(8,2014,2018)

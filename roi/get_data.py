@@ -1,5 +1,5 @@
 import pandas as pd
-from roi import settings, macrostats
+from roi import settings, macrostats, utilities
 from datetime import date
 
 def all_mean_wages():
@@ -15,10 +15,10 @@ def cpi_adjustments():
 	return(pd.read_csv(settings.File_Locations.cpi_adjustments_location))
 
 def bls_employment_series():
-	return(pd.read_csv(settings.File_Locations.bls_employment_location))
+	return(pd.read_csv(settings.File_Locations.bls_employment_location, converters={"state_code":utilities.check_state_code})) # read in states with leading zeroes, per FIPS
 
 def bls_laborforce_series():
-	return(pd.read_csv(settings.File_Locations.bls_laborforce_location))
+	return(pd.read_csv(settings.File_Locations.bls_laborforce_location, converters={"state_code":utilities.check_state_code})) # read in states with leading zeroes, per FIPS
 
 def bls_wage_series():
-	return(pd.read_csv(settings.File_Locations.bls_wage_location))	
+	return(pd.read_csv(settings.File_Locations.bls_wage_location, converters={"state_code":utilities.check_state_code})) # read in states with leading zeroes, per FIPS
