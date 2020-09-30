@@ -1,7 +1,7 @@
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 from roi.macrostats import BLS_API
-from roi import utilities, macrostats
+from roi import utilities, macrostats, settings
 from datetime import date
 import pandas as pd
 import pickle
@@ -309,7 +309,7 @@ def fetch_bls_data():
 	wage_dataframe = pd.DataFrame()
 	labor_force_dataframe = pd.DataFrame()
 
-	for state_code in [1,2,3]:#utilities.Data.state_crosswalk.values():
+	for state_code in utilities.Data.state_crosswalk.values():
 
 		emp_series_id = bls.employment_series_id(state_code=state_code)
 		emp_raw_response = bls.get_series(emp_series_id, start_year, end_year)
@@ -336,10 +336,14 @@ def fetch_bls_data():
 		wage_dataframe = wage_dataframe.append(wage)
 		labor_force_dataframe = labor_force_dataframe.append(laborforce)
 		print("Fetched BLS data for {}!".format(state_code))
-		
+
 	employment_dataframe.to_csv(bls_employment_series_location, index=False)
 	labor_force_dataframe.to_csv(bls_laborforce_series_location, index=False)
 	wage_dataframe.to_csv(bls_wage_series_location, index=False)
+
+	# get cpi data
+	cpi = bls.get_cpi_adjustment_range(start_year, end_year)
+	cpi.to_csv(cpi_adjustments_location, index=False)
 
 	return(None)
 

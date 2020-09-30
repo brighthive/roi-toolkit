@@ -4,7 +4,7 @@ import pandas as pd # using pandas here for the sake of (1) familiarity and (2) 
 import numpy as np
 import os
 from datetime import date
-from roi import settings
+from roi import settings, get_data
 import warnings
 
 """
@@ -70,16 +70,23 @@ class BLS_API:
 		https://www.bls.gov/developers/api_faqs.htm
 
 	"""
-	def __init__(self, bls_api_key = None):
+	def __init__(self, bls_api_key = None, query=True):
 
-		if (bls_api_key is None):
-			bls_api_key = os.getenv('BLS_API_KEY') # unnecessary for BLS series 1.0 api but series 2 API overcomes #extreme rate limiting
-			if bls_api_key is None:
-				raise NameError("The BLS_API class requires that you provide an API key to the Bureau of Labor Statistics API. You can pass this key directly when instantiating the class (e.g. BLS_API(YOUR_KEY_HERE) or (preferably) by setting an environment variable called BLS_API_KEY. For more information please see the BLS API docs at:\nhttps://www.bls.gov/developers/api_faqs.htm")
+		if query == False:
+			print("When query=False, ROI Toolkit BLS_API will attempt to locate a local tabular file containing the results of a previous query. By default, this data is located in roi/data/bls.")
+			self.bls_wage_series = get_data.bls_wage_series()
+			self.bls_employment_series = get_data.bls_employment_series()
+			self.bls_laborforce_series = get_data.bls_laborforce_series()
+			self.cpi_adjustment_series = get_data.cpi_adjustments()
+		else: 
+			if (bls_api_key is None):
+				bls_api_key = os.getenv('BLS_API_KEY') # unnecessary for BLS series 1.0 api but series 2 API overcomes #extreme rate limiting
+				if bls_api_key is None:
+					raise NameError("The BLS_API class requires that you provide an API key to the Bureau of Labor Statistics API. You can pass this key directly when instantiating the class (e.g. BLS_API(YOUR_KEY_HERE) or (preferably) by setting an environment variable called BLS_API_KEY. For more information please see the BLS API docs at: https://www.bls.gov/developers/api_faqs.htm")
+				else:
+					self.bls_api_key = bls_api_key
 			else:
 				self.bls_api_key = bls_api_key
-		else:
-			self.bls_api_key = bls_api_key
 
 	def get_cpi(self, prefix="CU", seasonal_adjustment_code="S", periodicity="R", area_code="0000", base_code="S", item_code="A0"):
 		"""
@@ -286,6 +293,7 @@ class BLS_API:
 		series_frame = self.parse_api_response(series)
 		series_frame_reduced = series_frame[series_frame.periodName == "January"].rename(columns={"value":"cpi"})[['year','cpi']]
 		series_frame_reduced['year'] = series_frame_reduced['year'].astype(int)
+		self.cpi_adjustment_series = series_frame_reduced
 
 		return(series_frame_reduced)
 
@@ -295,6 +303,12 @@ class BLS_API:
 		series_id = self.employment_series_id(state_code=state_code, measure_code=measure)
 		raw_response = self.get_series(series_id, start_year, end_year)
 		employment = self.parse_api_response(raw_response)
+		
+		if measure == "labor force":
+			self.bls_laborforce_series = employment
+		elif measure == "employment":
+			self.bls_employment_series = employment
+
 		return(employment)
 
 
@@ -303,6 +317,7 @@ class BLS_API:
 		series_id = self.wage_series_id(state_code=state_code)
 		raw_response = self.get_series(series_id, start_year, end_year)
 		wage = self.parse_api_response(raw_response)
+		self.bls_wage_series = wage
 		return(wage)
 
 	def cpi_adjust_frame(self, frame_, wage_column, wage_year_column, year=date.today().year):
@@ -349,7 +364,7 @@ class Calculations:
 		Returns the change in employment in between two month/year pairs
 	"""
 
-	def employment_change(bls_employment_table, bls_labor_force_table, start_month, end_month):
+	def employment_change(bls_employment_table, bls_labor_force_table, state_code, start_month, end_month):
 		"""
 		This function will probably have to be refactored as we move forward - this is basically just a skeleton.
 
@@ -391,7 +406,7 @@ class Calculations:
 
 		return employment_change
 
-	def wage_change(bls_wage_table, start_month, end_month):
+	def wage_change(bls_wage_table, state_code, start_month, end_month):
 		"""
 
 		Parameters:

@@ -26,9 +26,12 @@ class File_Locations:
 	cps_extract = os.path.join(dirname,"data/cps/cps_00027.csv")
 	mincer_model_location = os.path.join(dirname,"data/models/mincer.pickle")
 	mincer_params_location = os.path.join(dirname, "data/mincer_params.pickle")
-	cpi_adjustments_location = os.path.join(dirname, "data/cpi_adjustment_range.csv")
+	cpi_adjustments_location = os.path.join(dirname, "data/bls/cpi_adjustment_range.csv")
 	mean_wages_location = os.path.join(dirname, "data/mean_wages.csv")
 	hs_mean_wages_location = os.path.join(dirname, "data/hs_grads_mean_wages.csv")
+	bls_employment_location = os.path.join(dirname, "data/bls/bls_employment_series.csv")
+	bls_laborforce_location = os.path.join(dirname, "data/bls/bls_laborforce_series.csv")
+	bls_wage_location = os.path.join(dirname, "data/bls/bls_wage_series.csv")
 
 class Defaults:
 	min_group_size = 30
