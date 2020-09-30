@@ -4,7 +4,7 @@ import pandas as pd # using pandas here for the sake of (1) familiarity and (2) 
 import numpy as np
 import os
 from datetime import date
-from roi import settings, get_data
+from roi import settings, get_data, utilities
 import warnings
 
 """
@@ -123,12 +123,7 @@ class BLS_API:
 		A string containing the a Series ID, to be passed to the BLS API.
 
 		"""
-		if not isinstance(state_code, str):
-			warnings.warn("State codes, though integers, should be passed as strings. Something else was passed. Attempting to coerce to string.")
-			try:
-				state_code = str(state_code).zfill(2) # left pad with zeroes to align with FIP codes
-			except Exception as e:
-				print("Couldn't coerce state code to string: {}".format(e))
+		state_code = utilities.check_state_code(state_code)
 
 		area_code = "ST{}00000000000".format(state_code)
 		measure_code = Parameters.BLS_measure_codes[measure_code]
@@ -150,14 +145,7 @@ class BLS_API:
 		A string containing the a Series ID, to be passed to the BLS API.
 
 		"""
-
-		if not isinstance(state_code, str):
-			warnings.warn("State codes, though integers, should be passed as strings. Something else was passed. Attempting to coerce to string.")
-			try:
-				state_code = str(state_code).zfill(2) # left pad with zeroes to align with FIP codes
-				print("Success!")
-			except Exception as e:
-				print("Couldn't coerce to string: {}".format(e))
+		state_code = utilities.check_state_code(state_code)
 
 		# data type 11 = average weekly earnings
 		series_id = prefix + seasonal_adjustment_code + state_code + area_code + industry_code + data_type_code
@@ -222,7 +210,7 @@ class BLS_API:
 			raise Exception("parse_api_response() couldn't find 'value' in BLS API response. Printing raw response: {}".format(json_response))
 
 		# errors are coerced so that "Annual" dates go to NaN
-		data_frame['month_year'] = pd.to_datetime(data_frame.periodName + " " + data_frame.year, format='%B %Y', errors='coerce').astype('datetime64[M]')
+		data_frame['month_year'] = pd.to_datetime(data_frame.periodName + " " + data_frame.year, format='%B %Y', errors='coerce').dt.strftime('%Y-%m')
 
 		return(data_frame)
 
@@ -260,8 +248,7 @@ class BLS_API:
 			start_cpi = start_frame.loc[start_frame.periodName == "January", "value"].iat[0]
 			end_cpi = end_frame.loc[end_frame.periodName == "January", "value"].iat[0]
 		except Exception as e:
-			print ("Error fetching BLS CPI Statistics: {}".format(e))
-			exit()
+			raise Exception("Error fetching BLS CPI Statistics: {}".format(e))
 
 		adjustment = end_cpi/start_cpi
 		return(adjustment)
@@ -366,7 +353,11 @@ class Calculations:
 
 	def employment_change(bls_employment_table, bls_labor_force_table, state_code, start_month, end_month):
 		"""
-		This function will probably have to be refactored as we move forward - this is basically just a skeleton.
+		This function takes year/month YYYY-MM as datetime arguments to avoid false precision.
+		It fetches the associated figures from the BLS statistics provided as a function argument for
+		the first of the month provided.
+
+		BLS APIs return monthly data
 
 		Parameters:
 		-----------
@@ -389,17 +380,20 @@ class Calculations:
 		A single number indicating the employment change over the given period
 		"""
 
+		bls_employment_table = bls_employment_table[bls_employment_table['state_code'] == state_code]
+		bls_labor_force_table = bls_labor_force_table[bls_labor_force_table['state_code'] == state_code]
+
 		# configure dtype of input
-		start_month_year = pd.to_datetime(start_month)
-		end_month_year = pd.to_datetime(end_month)
+		start_month_year = pd.to_datetime(start_month).strftime("%Y-%m")
+		end_month_year = pd.to_datetime(end_month).strftime("%Y-%m")
 
 		# get employment figures
-		start_employment = bls_employment_table.loc[bls_employment_table.month_year == start_month, 'value'].astype(int).iat[0]
-		end_employment = bls_employment_table.loc[bls_employment_table.month_year == end_month, 'value'].astype(int).iat[0]
+		start_employment = bls_employment_table.loc[bls_employment_table.month_year == start_month_year, 'value'].astype(int).iat[0]
+		end_employment = bls_employment_table.loc[bls_employment_table.month_year == end_month_year, 'value'].astype(int).iat[0]
 
 		# get labor force figures
-		start_labor_force = bls_labor_force_table.loc[bls_labor_force_table.month_year == start_month, 'value'].astype(int).iat[0]
-		end_labor_force = bls_labor_force_table.loc[bls_labor_force_table.month_year == end_month, 'value'].astype(int).iat[0]
+		start_labor_force = bls_labor_force_table.loc[bls_labor_force_table.month_year == start_month_year, 'value'].astype(int).iat[0]
+		end_labor_force = bls_labor_force_table.loc[bls_labor_force_table.month_year == end_month_year, 'value'].astype(int).iat[0]
 
 		# calculation
 		employment_change = float((end_employment / end_labor_force) - (start_employment / start_labor_force))
@@ -427,15 +421,17 @@ class Calculations:
 		A single number indicating the wage change over the given period
 		"""
 
+		bls_wage_table = bls_wage_table[bls_wage_table['state_code'] == state_code]
+
 		bls_wage_table['bls_annual_wages'] = bls_wage_table['value'] * 52 # weekly wage to annual
 
 		# configure dtype of input
-		start_month_year = pd.to_datetime(start_month)
-		end_month_year = pd.to_datetime(end_month)
+		start_month_year = pd.to_datetime(start_month).strftime("%Y-%m")
+		end_month_year = pd.to_datetime(end_month).strftime("%Y-%m")
 
 		# get wage figures
-		start_wage = bls_wage_table.loc[bls_wage_table.month_year == start_month, 'bls_annual_wages'].astype(int).iat[0]
-		end_wage = bls_wage_table.loc[bls_wage_table.month_year == end_month, 'bls_annual_wages'].astype(int).iat[0]
+		start_wage = bls_wage_table.loc[bls_wage_table.month_year == start_month_year, 'value'].astype(float).iat[0]
+		end_wage = bls_wage_table.loc[bls_wage_table.month_year == end_month_year, 'value'].astype(float).iat[0]
 
 		# calculation
 		wage_change = end_wage - start_wage
