@@ -245,8 +245,8 @@ class BLS_API:
 		try:
 			start_frame = self.parse_api_response(series_start)
 			end_frame = self.parse_api_response(series_end)
-			start_cpi = start_frame.loc[start_frame.periodName == "January", "value"].iat[0]
-			end_cpi = end_frame.loc[end_frame.periodName == "January", "value"].iat[0]
+			start_cpi = start_frame['value'].mean()#.loc[start_frame.periodName == "January", "value"].iat[0]
+			end_cpi = end_frame['value'].mean()#.loc[end_frame.periodName == "January", "value"].iat[0]
 		except Exception as e:
 			raise Exception("Error fetching BLS CPI Statistics: {}".format(e))
 
@@ -258,7 +258,7 @@ class BLS_API:
 		This is identical to get_cpi_adjustment() except it returns the CPI indices for the given range, so it returns a dataframe
 		Remember - it takes a maximum of twenty years!
 
-		Again - returning January measurements only.
+		Because the CPI-U returns an index using 1982 as a base year, we average the index to get a year-level inflation index.
 
 		Parameters:
 		-----------
@@ -278,11 +278,11 @@ class BLS_API:
 		series_id = self.get_cpi()
 		series = self.get_series(series_id, start_year, end_year)
 		series_frame = self.parse_api_response(series)
-		series_frame_reduced = series_frame[series_frame.periodName == "January"].rename(columns={"value":"cpi"})[['year','cpi']]
-		series_frame_reduced['year'] = series_frame_reduced['year'].astype(int)
-		self.cpi_adjustment_series = series_frame_reduced
 
-		return(series_frame_reduced)
+		#convert monthly to annual figures
+		annual = series_frame.groupby('year')['value'].mean().reset_index().rename(columns={"value":"cpi"})
+		self.cpi_adjustment_series = annual
+		return(annual)
 
 	def get_employment_data(self, state_code, start_year, end_year, measure):
 
