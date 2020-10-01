@@ -38,7 +38,8 @@ for (i in 1:nrow(combos)) {
   ages[ages < 18] <- 18
   completer <- rbinom(number.in.group, 1, rbeta(1,4,1))
   employed_at_end <- round(sigmoid(completer*2 + rnorm(number.in.group,0,0.2))) # employment as a partial function 
-  frame_ <- cbind(race = as.character(rep(combos[i, 'race'],number.in.group)), gender = as.character(rep(combos[i, 'gender'],number.in.group)), earnings_start = earnings_start, earnings_end = earnings_end, age = ages, program=as.character(rep(combos[i, 'program'],number.in.group)), program_start=program_start, program_end=program_end, education_level=combos[i, 'education.level'], completer=completer, employed_at_end=employed_at_end)
+  employed_at_start <- round(sigmoid(-1 + completer*1.5 + rnorm(number.in.group,0,0.3))) # employment as a partial function 
+  frame_ <- cbind(race = as.character(rep(combos[i, 'race'],number.in.group)), gender = as.character(rep(combos[i, 'gender'],number.in.group)), earnings_start = earnings_start, earnings_end = earnings_end, age = ages, program=as.character(rep(combos[i, 'program'],number.in.group)), program_start=program_start, program_end=program_end, education_level=combos[i, 'education.level'], completer=completer, employed_at_end=employed_at_end, employed_at_start=employed_at_start)
   frames_ <- rbind(frames_, frame_)
 }
 
@@ -57,5 +58,13 @@ frames_$City <- address.file[sample.indices,'City']
 frames_$State <- address.file[sample.indices,'State']
 frames_$Zip <- address.file[sample.indices,'Zip']
 frames_$id <- sample(1:nrow(frames_))
+frames_$start_month <- sample(c(8,9,10), nrow(frames_), replace=TRUE)
+frames_$end_month <- sample(c(5,6,7), nrow(frames_), replace=TRUE)
+frames_$age <- as.numeric(as.character(frames_$age))
+
+# set 5% of start and end earnings to NA
+number.to.set = round(0.05*nrow(frames_))
+frames_[sample(1:nrow(frames_),number.to.set), 'earnings_start'] <- NA
+frames_[sample(1:nrow(frames_),number.to.set), 'earnings_end'] <- NA
 
 write.csv(frames_,"test_microdata.csv")

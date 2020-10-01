@@ -87,10 +87,11 @@ def State_To_FIPS(state_abbreviation):
 def check_state_code(state_code):
 	if not isinstance(state_code, str):
 		warnings.warn("State codes, though integers, should be passed as strings. Something else was passed. Attempting to coerce to string.")
-		try:
-			state_code = str(state_code).zfill(2) # left pad with zeroes to align with FIP codes
-			return(state_code)
-		except Exception as e:
-			print("Couldn't coerce state code to string: {}".format(e))
 	else:
+		pass
+	try:
+		state_code = str(state_code).zfill(2) # left pad with zeroes to align with FIP codes
 		return(state_code)
+	except Exception as e:
+		print("Couldn't coerce state code to string: {}".format(e))
+	return(None)

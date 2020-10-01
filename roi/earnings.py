@@ -43,7 +43,6 @@ class Earnings_ROI:
 	def calculate(net_price_series, earnings_series):
 		return(None)
 
-
 class Premium(object):
 	"""
 	REDO DOCS HERE
@@ -138,6 +137,7 @@ class Premium(object):
 
 
 	def mincer_predicted_wage(self, state, prior_education, current_age, starting_wage, years_passed):
+
 		"""
 		Given a state, a prior education level (CPS EDUC code), the current age of an individual, their wage
 		before entering an educational program, and the time they spent in the program, this function calculates
@@ -177,6 +177,23 @@ class Premium(object):
 		# get values for calculation
 		work_experience_current = current_age - years_of_schooling - 6 # based on Heckman
 		work_experience_start = work_experience_current - years_passed
+
+		# if starting wage is not given for high school graduates, give them the mean high school wage
+		# do this for 18-25 year-old HS grads ONLY! This is defensible on the grounds that these individuals
+		# are just entering the labor force and are broadly similar to each other. The assumption is less defensible
+		# for older unemployed workers with high school degrees, who likely differ systematically from older EMPLOYED
+		# workers with high school degrees.
+		hs_mergeframe = pd.DataFrame(prior_education)
+		hs_mergeframe['state'] = state
+		hs_mergeframe['age_group'] = Utilities.age_to_group(current_age - years_passed)
+		hs_mergeframe['entry_year'] = 2009
+		hs_merged = hs_mergeframe.merge(self.hs_grads_mean_wages, left_on=['state','age_group', 'entry_year'], right_on=['STATEFIP','age_group','YEAR'], how='left')
+		hsgrad_wages = hs_merged['mean_INCWAGE']
+
+		# replace!
+		starting_wage.loc[(current_age <= 25) & (pd.isna(starting_wage))] = hsgrad_wages.loc[(current_age <= 25) & (pd.isna(starting_wage))]
+
+		# deal with other missing wages
 
 		# calculate
 		# change in natural log is approximately equal to percentage change
