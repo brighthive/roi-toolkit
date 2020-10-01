@@ -69,10 +69,10 @@ if __name__ == "__main__":
 
 	# Calculate the individual-level earnings premia for all rows in a dataframe
 
-	# prem = earnings.Premium()
-	# premium_calc = prem.Full_Earnings_Premium(test_microdata, 'earnings_start', 'earnings_end', 'program_start', 'program_end','age','state','education_level')
-	# print(premium_calc)
-	# exit()
+	prem = earnings.Premium()
+	premium_calc = prem.Full_Earnings_Premium(test_microdata, 'earnings_start', 'earnings_end', 'program_start', 'program_end','age','08','education_level')
+	print(premium_calc)
+	exit()
 
 	# Calculate program-level earnings premium statistics!
 
@@ -131,30 +131,27 @@ if __name__ == "__main__":
 	print(completion.time_to_completion)
 	'''
 
-	bls_api = macrostats.BLS_API(query=False)
-	#bls_api.get_wage_data('08',2008,2012)
+	# fetch employment change 
+	#bls_api = macrostats.BLS_API(query=False)
+	#employment = bls_api.bls_employment_series
+	#laborforce = bls_api.bls_laborforce_series
+	#change = macrostats.Calculations.employment_change(employment, laborforce, "08", "2012-07","2018-10")
 
-	wages = bls_api.bls_wage_series
-	employment = bls_api.bls_employment_series
-	laborforce = bls_api.bls_laborforce_series
-	#change = macrostats.Calculations.wage_change(wages, "02", "2018-01","2019-01")
-	change = macrostats.Calculations.employment_change(employment, laborforce, "08", "2012-07","2018-10")
-	print(change)
-	exit()
-	employment = bls_api.get_employment_data(state_code="08", start_year=2002,end_year=2005, measure="employment")
-	wage = bls_api.get_wage_data(8,2014,2018)
-	print(employment)
-	exit()
-
-
-	cpi_range = bls_api.get_cpi_adjustment_range(2002, 2005) # need to be connected to the internet to fetch BLS data
-	print(cpi_range)
-	exit()
+	#bls_api = macrostats.BLS_API()
+	#cpi_range = bls_api.get_cpi_adjustment_range(2002, 2005) # get annual CPI-U index for all years in intervening range
+	#cpi_range_oneyear = bls_api.get_cpi_adjustment(1999, 2020) # get CPI-U adjustment factor between the two years provided
+	#print(cpi_range_oneyear)
+	#exit()
 
 	# Employment
-	employment = employment.Employment_Likelihood(test_microdata, 'program', 'program_start', 'program_end', 'employed_at_end', 'employed_at_start','age_group_at_start')
-	print(employment.raw_likelihood_at_end)
-	print(employment.raw_likelihood_change)
+	#employment = employment.Employment_Likelihood(test_microdata, 'program', 'program_start', 'program_end', 'employed_at_end', 'employed_at_start','age_group_at_start')
+	#print(employment.raw_likelihood_at_end)
+	#print(employment.raw_likelihood_change)
+	#exit()
+
+	hs = get_data.hs_grads_mean_wages()
+	print(hs)
+
 	exit()
 
 
