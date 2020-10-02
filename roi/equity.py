@@ -25,6 +25,10 @@ def dataframe_groups_to_ndarray(dataframe, groupby_columns, value_to_groups):
 	list_of_values = np.asarray(grouped)
 	return (groups, list_of_values)
 
+class Metric():
+	def __init__(self):
+		return(None)
+
 class Supporting:
 	"""
 	Class for miscellaneous supporting calculation functions.
@@ -348,10 +352,13 @@ class Theil_L:
 		l_ratio = Theil_L.Calculate_Ratio(values)
 		return(l_ratio)
 
-class ANOVA:
+
+class Variance_Analysis:
 	# decomposition of income inequality by subgroups: http://www.fao.org/3/a-am342e.pdf
 	# To reduce dependencies and improve flexibility, we implement our own ANOVA
 	# should implement both bayesian (nonparametric) and frequentist (parametric) anova
+	# Please note that in this implementation, np.var calculates the POPULATION variance, not the SAMPLE variance
+	# Please note as well that the Gini index is not perfectly decomposable, and contains a residual element K
 
 	def Variance_Components(array_of_groups, array_of_values):
 		ungrouped_observations = np.concatenate(array_of_values).flatten()
@@ -375,5 +382,41 @@ class ANOVA:
 		return(None)
 
 class Gini:
-	def calculate():
-		return(None)
+	def __init__(self, array_of_groups, array_of_values):
+		self.groups = array_of_groups
+		self.values = array_of_values
+		self.G_within = self.gini_within(array_of_values)
+		self.G_between = self.gini_between(array_of_values)
+		self.G_overall = self.gini(self.values.flatten())
+		self.residual = self.G_overall - (self.G_within + self.G_between)
+
+	@staticmethod
+	def gini_within(array_of_values):
+		ungrouped_observations = np.concatenate(array_of_values).flatten()
+		n = len(ungrouped_observations)
+		group_shares = np.asarray([len(group)/n for group in array_of_values])
+		value_shares = np.asarray([np.sum(group)/np.sum(ungrouped_observations) for group in array_of_values])
+		group_weights = value_shares * group_shares
+		ginis = np.array([Gini.gini(group) for group in array_of_values])
+		G_within = np.sum(ginis * group_weights)
+		return(G_within)
+
+	@staticmethod
+	def gini_between(array_of_values):
+		means_replaced = np.array([np.repeat(np.mean(group), len(group)) for group in array_of_values]).flatten()
+		G_between = Gini.gini(means_replaced)
+		return(G_between)
+
+
+	@staticmethod
+	def gini(values):
+		n = len(values)
+		xbar = np.mean(values)
+		ad = np.array([abs(i - j) for i in values for j in values])
+		G = np.sum(ad)/(2*n*n*xbar)
+		return(G)
+
+
+
+
+

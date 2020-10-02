@@ -69,10 +69,10 @@ if __name__ == "__main__":
 
 	# Calculate the individual-level earnings premia for all rows in a dataframe
 
-	prem = earnings.Premium()
-	premium_calc = prem.Full_Earnings_Premium(test_microdata, 'earnings_start', 'earnings_end', 'program_start', 'program_end','age','08','education_level')
-	print(premium_calc)
-	exit()
+	#prem = earnings.Premium()
+	#premium_calc = prem.Full_Earnings_Premium(test_microdata, 'earnings_start', 'earnings_end', 'program_start', 'program_end','age','08','education_level')
+	#print(premium_calc)
+	#exit()
 
 	# Calculate program-level earnings premium statistics!
 
@@ -93,7 +93,7 @@ if __name__ == "__main__":
 
 #	# Inequality in earnings premium
 	# groups, values = equity.dataframe_groups_to_ndarray(premium_calc, 'race', 'earnings_premium')
-	# ratio = equity.ANOVA.Ratio(groups, values)
+	# ratio = equity.Variance_Analysis.Ratio(groups, values)
 	# print(ratio)
 	# exit()
 
@@ -149,10 +149,19 @@ if __name__ == "__main__":
 	#print(employment.raw_likelihood_change)
 	#exit()
 
-	hs = get_data.hs_grads_mean_wages()
-	print(hs)
 
+	# Gini test
+	a = np.random.normal(2,5,100)
+	b = np.random.normal(10,6,100)
+	c = np.random.normal(120,1,100)
+	all_ = np.array([a,b,c])
+	g = equity.Gini([1,2,3],all_)
+	print(g.G_within)
+	print(g.G_between)
+	print(g.G_overall)
+	print(g.G_within + g.G_between)
 	exit()
+
 
 
 	
@@ -166,10 +175,5 @@ if __name__ == "__main__":
 	print(predicted_wages)
 	exit()	
 
-
-	# decomposition background
-	# http://siteresources.worldbank.org/PGLP/Resources/PMch6.pdf
-
-	# right now the within group is N x the overall index
 
 
