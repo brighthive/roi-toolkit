@@ -29,6 +29,10 @@ class Metric():
 	def __init__(self):
 		return(None)
 
+	@classmethod
+	def from_dataframe(cls, frame, group_column, value_column):
+		return(None)
+
 class Supporting:
 	"""
 	Class for miscellaneous supporting calculation functions.
