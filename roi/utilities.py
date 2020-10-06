@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import warnings
+from pandas.api.types import is_numeric_dtype
 
 class Data:
 	state_crosswalk = {
@@ -95,3 +96,22 @@ def check_state_code(state_code):
 	except Exception as e:
 		print("Couldn't coerce state code to string: {}".format(e))
 	return(None)
+
+def check_state_code_series(state_code_series):
+	if not isinstance(state_code_series, pd.Series):
+		raise ValueError("check_state_code_series() takes a Pandas Series as an argument. Something else was passed.")
+	else:
+		pass
+
+	if is_numeric_dtype(state_code_series):
+		warnings.warn("State codes, though integers, should be passed as strings. Something else was passed. Attempting to coerce to string.")
+	else:
+		pass
+
+	try:
+		state_code_series = state_code_series.astype(str).str.pad(2, fillchar="0") # left pad with zeroes to align with FIP codes
+		return(state_code_series)
+	except Exception as e:
+		print("Couldn't coerce state code to string: {}".format(e))
+	return(None)
+
