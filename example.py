@@ -30,6 +30,8 @@ if __name__ == "__main__":
 	test_microdata['age_at_start'] = test_microdata['age'] - (date.today().year - test_microdata['program_start'])
 	test_microdata['age_group_at_start'] = earnings.Utilities.age_to_group(test_microdata['age_at_start'])
 
+	print(test_microdata)
+
 	# Create an age group column. The provided data has an age column denoting CURRENT age... but we want age at start
 
 	#print(test_microdata.head())
@@ -144,9 +146,11 @@ if __name__ == "__main__":
 	#exit()
 
 	# Employment
-	#employment = employment.Employment_Likelihood(test_microdata, 'program', 'program_start', 'program_end', 'employed_at_end', 'employed_at_start','age_group_at_start')
-	#print(employment.raw_likelihood_at_end)
-	#print(employment.raw_likelihood_change)
+	test_microdata['start_month_year'] = test_microdata['program_start'].astype(str) + '-' + test_microdata['start_month'].astype(str).str.pad(2, fillchar='0')
+	test_microdata['end_month_year'] = test_microdata['program_end'].astype(str) + '-' + test_microdata['end_month'].astype(str).str.pad(2, fillchar='0')
+	employment = employment.Employment_Likelihood(test_microdata, 'program', 'start_month_year', 'end_month_year', 'employed_at_end', 'employed_at_start','age_group_at_start','state')
+	print(employment.employment_premium)
+	exit()
 	#exit()
 
 

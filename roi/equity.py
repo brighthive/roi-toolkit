@@ -362,7 +362,6 @@ class Variance_Analysis:
 	# To reduce dependencies and improve flexibility, we implement our own ANOVA
 	# should implement both bayesian (nonparametric) and frequentist (parametric) anova
 	# Please note that in this implementation, np.var calculates the POPULATION variance, not the SAMPLE variance
-	# Please note as well that the Gini index is not perfectly decomposable, and contains a residual element K
 
 	def Variance_Components(array_of_groups, array_of_values):
 		ungrouped_observations = np.concatenate(array_of_values).flatten()
@@ -386,6 +385,9 @@ class Variance_Analysis:
 		return(None)
 
 class Gini:
+	# Please note as well that the Gini index is not perfectly decomposable, and contains a residual element K
+	# 
+	
 	def __init__(self, array_of_groups, array_of_values):
 		self.groups = array_of_groups
 		self.values = array_of_values

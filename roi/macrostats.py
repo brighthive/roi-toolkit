@@ -58,7 +58,7 @@ class BLS_API:
 	need to be included as prat of the series ID.
 
 	Comments in this class don't explain all arguments related to BLS API calls. Each method contains a link to the API
-	page for the associated series. Parameters subject to change in the other methods in this class are the only opnes listed
+	page for the associated series. Parameters subject to change in the other methods in this class are the only ones listed
 	under parameters for each method.
 
 	Reference:
@@ -78,6 +78,7 @@ class BLS_API:
 			self.bls_employment_series = get_data.bls_employment_series()
 			self.bls_laborforce_series = get_data.bls_laborforce_series()
 			self.cpi_adjustment_series = get_data.cpi_adjustments()
+			self.employment_rate_series = self.make_employment_rate_frame(self.bls_employment_series, self.bls_laborforce_series)
 		else: 
 			if (bls_api_key is None):
 				bls_api_key = os.getenv('BLS_API_KEY') # unnecessary for BLS series 1.0 api but series 2 API overcomes #extreme rate limiting
@@ -255,7 +256,7 @@ class BLS_API:
 
 	def get_cpi_adjustment_range(self, start_year, end_year):
 		"""
-		This is identical to get_cpi_adjustment() except it returns the CPI indices for the given range, so it returns a dataframe
+		Thehis is identical to get_cpi_adjustment() except it returns the CPI indices for the given range, so it returns a dataframe
 		Remember - it takes a maximum of twenty years!
 
 		Because the CPI-U returns an index using 1982 as a base year, we average the index to get a year-level inflation index.
@@ -337,6 +338,12 @@ class BLS_API:
 		adjusted_frame['adjustment_factor'] = current_year_cpi/cpi
 		adjusted_frame['adjusted_wage'] = adjusted_frame['adjustment_factor'] * adjusted_frame[wage_column]
 		return adjusted_frame
+
+	def make_employment_rate_frame(self, employment_series, laborforce_series):
+		employment_rate_series = employment_series.merge(laborforce_series, on=["state_code", "month_year"], suffixes=("_emp","_labor"))
+		employment_rate_series['employment_rate'] = employment_rate_series['value_emp'] / employment_rate_series['value_labor']
+		final = employment_rate_series[['state_code','month_year','employment_rate']]
+		return(final)
 
 class Calculations:
 	"""
