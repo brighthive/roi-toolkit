@@ -1,4 +1,4 @@
-from roi import settings, utilities, macrostats
+from roi import settings, utilities, external
 
 class Employment_Likelihood:
 	def __init__(self, dataframe, program_identifier, entry_year_month, exit_year_month, employed_at_end, employed_at_start, age_group_at_start, state, query=False):
@@ -23,7 +23,7 @@ class Employment_Likelihood:
 
 	@staticmethod
 	def _fetch_macro_correction(dataframe, entry_year_month, exit_year_month, state, query):
-		bls = macrostats.BLS_API(query=query)
+		bls = external.BLS_API(query=query)
 		rates = bls.employment_rate_series
 		dataframe[state] = utilities.check_state_code_series(dataframe[state])
 		entry_employment = dataframe.merge(rates, left_on=[state, entry_year_month], right_on=['state_code','month_year'], how='left')
