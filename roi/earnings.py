@@ -24,24 +24,6 @@ pd.set_option('display.float_format', lambda x: '%.3f' % x)
 CPS_Education_Levels = [("GED",73),("BA",111),("MA",123),("PHD",125)]
 CPS_Age_Groups = ['18 and under','19-25','26-34','35-54','55-64','65+']
 
-class Summary(object):
-	def __init__(self, frame_, earnings_column):
-		self.frame_ = frame_
-		self.earnings_column = earnings_column
-		return(None)
-
-	def earnings_summaries(self, grouping_factors):
-		grouped = self.frame_.groupby(grouping_factors, as_index=False)[self.earnings_column].agg({'n':np.size,'mean':np.mean, 'median':np.median, 'sd':np.std, 'min':np.min, 'max':np.max})
-		return(grouped)
-
-class Utilities:
-	def age_to_group(pandas_series):
-		cut_series = pd.cut(pandas_series, bins=[0,18,25,34,54,64,150], right=True, labels=['18 and under','19-25','26-34','35-54','55-64','65+']).astype(str)
-		return(cut_series)
-
-class Earnings_ROI:
-	def calculate(net_price_series, earnings_series):
-		return(None)
 
 class Premium(object):
 	"""
@@ -185,7 +167,7 @@ class Premium(object):
 		# workers with high school degrees.
 		hs_mergeframe = pd.DataFrame(prior_education)
 		hs_mergeframe['state'] = state
-		hs_mergeframe['age_group'] = Utilities.age_to_group(current_age - years_passed)
+		hs_mergeframe['age_group'] = utilities.age_to_group(current_age - years_passed)
 		hs_mergeframe['entry_year'] = 2009
 		hs_merged = hs_mergeframe.merge(self.hs_grads_mean_wages, left_on=['state','age_group', 'entry_year'], right_on=['STATEFIP','age_group','YEAR'], how='left')
 		hsgrad_wages = hs_merged['mean_INCWAGE']
@@ -217,8 +199,7 @@ class Premium(object):
 
 	def Group_Earnings_Premium(self, dataframe, earnings_before_column, earnings_after_column, start_year_column, end_year_column, age_at_start, statefip, edlevel, grouping_variable):
 		ind_level_earnings = self.Full_Earnings_Premium(dataframe, earnings_before_column, earnings_after_column, start_year_column, end_year_column, age_at_start, statefip, edlevel)
-		summ = Summary(ind_level_earnings, 'earnings_premium')
-		summaries = summ.earnings_summaries(grouping_variable)
+		summaries = utilities.multiple_describe(ind_level_earnings, grouping_variable, 'earnings_premium')
 		# here - do not report if less than default number!
 		return(summaries)
 

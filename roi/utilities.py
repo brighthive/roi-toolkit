@@ -115,6 +115,13 @@ def check_state_code_series(state_code_series):
 		print("Couldn't coerce state code to string: {}".format(e))
 	return(None)
 
+def age_to_group(pandas_series):
+		cut_series = pd.cut(pandas_series, bins=[0,18,25,34,54,64,150], right=True, labels=['18 and under','19-25','26-34','35-54','55-64','65+']).astype(str)
+		return(cut_series)
+
+def multiple_describe(frame_, grouping_factors, value_column_name):
+	grouped = frame_.groupby(grouping_factors, as_index=False)[value_column_name].agg({'n':np.size,'mean':np.mean, 'median':np.median, 'sd':np.std, 'min':np.min, 'max':np.max})
+	return(grouped)
 
 class Adjustments:
 
