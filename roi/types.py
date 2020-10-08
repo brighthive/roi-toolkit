@@ -136,3 +136,13 @@ class WageRecord(Validator):
 	@classmethod
 	def from_education_and_wage(WageRecord_object, Programs_Object, Student_Object, Wage_Object):
 		return(None)
+
+class Metric:
+	def __init__(self, dataframe):
+		self.data = dataframe
+		self.individual_stats = None
+		self.group_stats = None
+
+
+
+
