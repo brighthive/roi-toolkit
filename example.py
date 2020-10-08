@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from roi import earnings, types, macrostats, get_data, equity, geo, utilities, completion, employment
+from roi import earnings, types, external, get_data, equity, geo, utilities, completion, employment
 from datetime import date
 import sys
 #print(sys.modules.keys())
@@ -41,7 +41,7 @@ if __name__ == "__main__":
 	# Adjust a dollar column in the microdata to current dollars
 
 	# cpi_adjustments = get_data.cpi_adjustments()
-	# test_microdata['fixed'] = macrostats.Adjustments.adjust_to_current_dollars(test_microdata, 'program_start', 'earnings_start', cpi_adjustments)
+	# test_microdata['fixed'] = external.Adjustments.adjust_to_current_dollars(test_microdata, 'program_start', 'earnings_start', cpi_adjustments)
 	# print(test_microdata)
 
 	# Get earnings summary from test microdata
@@ -134,12 +134,12 @@ if __name__ == "__main__":
 	'''
 
 	# fetch employment change 
-	#bls_api = macrostats.BLS_API(query=False)
+	#bls_api = external.BLS_API(query=False)
 	#employment = bls_api.bls_employment_series
 	#laborforce = bls_api.bls_laborforce_series
-	#change = macrostats.Calculations.employment_change(employment, laborforce, "08", "2012-07","2018-10")
+	#change = external.Calculations.employment_change(employment, laborforce, "08", "2012-07","2018-10")
 
-	#bls_api = macrostats.BLS_API()
+	#bls_api = external.BLS_API()
 	#cpi_range = bls_api.get_cpi_adjustment_range(2002, 2005) # get annual CPI-U index for all years in intervening range
 	#cpi_range_oneyear = bls_api.get_cpi_adjustment(1999, 2020) # get CPI-U adjustment factor between the two years provided
 	#print(cpi_range_oneyear)

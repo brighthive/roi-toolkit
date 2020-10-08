@@ -1,7 +1,7 @@
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
-from roi.macrostats import BLS_API
-from roi import utilities, macrostats, settings
+from roi.external import BLS_API
+from roi import utilities, external, settings
 from datetime import date
 import pandas as pd
 import pickle

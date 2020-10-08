@@ -1,5 +1,5 @@
 import pandas as pd
-from roi import settings, macrostats, utilities
+from roi import settings, external, utilities
 from datetime import date
 
 def all_mean_wages():
