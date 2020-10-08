@@ -115,3 +115,60 @@ def check_state_code_series(state_code_series):
 		print("Couldn't coerce state code to string: {}".format(e))
 	return(None)
 
+
+class Adjustments:
+
+	def adjust_to_current_dollars(frame_, year_column_name, value_column_name, cpi_adjustments):
+		max_year_row = cpi_adjustments.loc[cpi_adjustments['year'] == cpi_adjustments['year'].max()].iloc[0] # get latest year of CPI data
+		max_year = max_year_row['year']
+		max_cpi_index = max_year_row['cpi']
+
+		print("Latest CPI year in provided BLS data is {}: All dollars being adjusted to {} dollars.".format(str(max_year), str(max_year)))
+
+		# Error checking and warnings
+		value_nas = pd.isna(frame_[value_column_name]).sum()
+		year_nas = pd.isna(frame_[year_column_name]).sum()
+
+		if value_nas > 0:
+			warnings.warn("Value column {} contains {} NA values ({}%) of total.".format(value_column_name, value_nas, round(100*value_nas/len(frame_),2)))
+
+		if year_nas > 0:
+			warnings.warn("Year column {} contains {} NA values ({}%) of total.".format(value_column_name, value_nas, round(100*year_nas/len(frame_),2)))
+
+		# Merge provided frame with CPI data
+		frame_merged = frame_.merge(cpi_adjustments, left_on=year_column_name, right_on='year', how='left', indicator=True)
+
+		# Report years that didn't merge
+		unmerged_from_frame = frame_merged[frame_merged['_merge'] == "left_only"]
+		unmerged_len = len(unmerged_from_frame)
+
+		if unmerged_len > 0:
+			warnings.warn("{} rows in column {} could not be merged with provided CPI data. Please note that (1) the BLS API provides only up to 20 years of data; if you want to use more, you will have to manually combine multiple queries. (2) We do not recommend using more than ten years of historical data in calculations.".format(unmerged_len, year_column_name))
+			print("Years in provided dataframe for which there is no data in the provided CPI frame:\n")
+			print(set(frame_merged.loc[frame_merged['_merge'] == "left_only", year_column_name]))
+
+		# adjust and return
+		adjusted_column = frame_merged[value_column_name]/frame_merged['cpi'] * max_cpi_index
+		return(adjusted_column)
+
+class Local_Data:
+	def all_mean_wages():
+		return(pd.read_csv(settings.File_Locations.mean_wages_location, converters={"state_code":utilities.check_state_code}))
+
+	def hs_grads_mean_wages():
+		return(pd.read_csv(settings.File_Locations.hs_mean_wages_location, converters={"STATEFIP":utilities.check_state_code}))
+
+	def mincer_params():
+		return(pd.read_pickle(settings.File_Locations.mincer_params_location))
+
+	def cpi_adjustments():
+		return(pd.read_csv(settings.File_Locations.cpi_adjustments_location))
+
+	def bls_employment_series():
+		return(pd.read_csv(settings.File_Locations.bls_employment_location, converters={"state_code":utilities.check_state_code})) # read in states with leading zeroes, per FIPS
+
+	def bls_laborforce_series():
+		return(pd.read_csv(settings.File_Locations.bls_laborforce_location, converters={"state_code":utilities.check_state_code})) # read in states with leading zeroes, per FIPS
+
+	def bls_wage_series():
+		return(pd.read_csv(settings.File_Locations.bls_wage_location, converters={"state_code":utilities.check_state_code})) # read in states with leading zeroes, per FIPS
