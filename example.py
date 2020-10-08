@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from roi import earnings, types, external, get_data, equity, geo, utilities, completion, employment
+from roi import earnings, types, external, equity, utilities, completion, employment
 from datetime import date
 import sys
 #print(sys.modules.keys())
@@ -40,7 +40,7 @@ if __name__ == "__main__":
 	
 	# Adjust a dollar column in the microdata to current dollars
 
-	# cpi_adjustments = get_data.cpi_adjustments()
+	# cpi_adjustments = utilities.Local_Data.cpi_adjustments()
 	# test_microdata['fixed'] = external.Adjustments.adjust_to_current_dollars(test_microdata, 'program_start', 'earnings_start', cpi_adjustments)
 	# print(test_microdata)
 

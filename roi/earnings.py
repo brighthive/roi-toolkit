@@ -2,8 +2,8 @@ import pandas as pd
 import numpy as np
 from datetime import date
 from roi import settings
-from roi import macrostats
-from roi import get_data
+from roi import external
+from roi.utilities import Local_Data
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 from os import path
@@ -51,12 +51,12 @@ class Premium(object):
 		self.base_year = date.today().year - 1
 
 		# Read in data and params that are packaged with the module
-		self.all_mean_wages = get_data.all_mean_wages()
-		self.hs_grads_mean_wages = get_data.hs_grads_mean_wages()
-		self.mincer_params = get_data.mincer_params()
+		self.all_mean_wages = Local_Data.all_mean_wages()
+		self.hs_grads_mean_wages = Local_Data.hs_grads_mean_wages()
+		self.mincer_params = Local_Data.mincer_params()
 
 		# fetch CPI adjustments from the Bureay of Labor Statistics
-		self.cpi_adjustments = get_data.cpi_adjustments()
+		self.cpi_adjustments = Local_Data.cpi_adjustments()
 		#BLS_API.get_cpi_adjustment_range(self.base_year - 19, self.base_year) # need to be connected to the internet to fetch BLS data
 
 		# DELETE

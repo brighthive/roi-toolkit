@@ -4,7 +4,7 @@ import pandas as pd # using pandas here for the sake of (1) familiarity and (2) 
 import numpy as np
 import os
 from datetime import date
-from roi import settings, get_data, utilities
+from roi import settings, utilities
 import warnings
 
 """
@@ -74,10 +74,10 @@ class BLS_API:
 
 		if query == False:
 			print("When query=False, ROI Toolkit BLS_API will attempt to locate a local tabular file containing the results of a previous query. By default, this data is located in roi/data/bls.")
-			self.bls_wage_series = get_data.bls_wage_series()
-			self.bls_employment_series = get_data.bls_employment_series()
-			self.bls_laborforce_series = get_data.bls_laborforce_series()
-			self.cpi_adjustment_series = get_data.cpi_adjustments()
+			self.bls_wage_series = utilities.Local_Data.bls_wage_series()
+			self.bls_employment_series = utilities.Local_Data.bls_employment_series()
+			self.bls_laborforce_series = utilities.Local_Data.bls_laborforce_series()
+			self.cpi_adjustment_series = utilities.Local_Data.cpi_adjustments()
 			self.employment_rate_series = self.make_employment_rate_frame(self.bls_employment_series, self.bls_laborforce_series)
 		else: 
 			if (bls_api_key is None):
@@ -444,80 +444,3 @@ class Calculations:
 		wage_change = end_wage - start_wage
 
 		return wage_change
-
-class Adjustments:
-
-	def adjust_to_current_dollars(frame_, year_column_name, value_column_name, cpi_adjustments):
-		max_year_row = cpi_adjustments.loc[cpi_adjustments['year'] == cpi_adjustments['year'].max()].iloc[0] # get latest year of CPI data
-		max_year = max_year_row['year']
-		max_cpi_index = max_year_row['cpi']
-
-		print("Latest CPI year in provided BLS data is {}: All dollars being adjusted to {} dollars.".format(str(max_year), str(max_year)))
-
-		# Error checking and warnings
-		value_nas = pd.isna(frame_[value_column_name]).sum()
-		year_nas = pd.isna(frame_[year_column_name]).sum()
-
-		if value_nas > 0:
-			warnings.warn("Value column {} contains {} NA values ({}%) of total.".format(value_column_name, value_nas, round(100*value_nas/len(frame_),2)))
-
-		if year_nas > 0:
-			warnings.warn("Year column {} contains {} NA values ({}%) of total.".format(value_column_name, value_nas, round(100*year_nas/len(frame_),2)))
-
-		# Merge provided frame with CPI data
-		frame_merged = frame_.merge(cpi_adjustments, left_on=year_column_name, right_on='year', how='left', indicator=True)
-
-		# Report years that didn't merge
-		unmerged_from_frame = frame_merged[frame_merged['_merge'] == "left_only"]
-		unmerged_len = len(unmerged_from_frame)
-
-		if unmerged_len > 0:
-			warnings.warn("{} rows in column {} could not be merged with provided CPI data. Please note that (1) the BLS API provides only up to 20 years of data; if you want to use more, you will have to manually combine multiple queries. (2) We do not recommend using more than ten years of historical data in calculations.".format(unmerged_len, year_column_name))
-			print("Years in provided dataframe for which there is no data in the provided CPI frame:\n")
-			print(set(frame_merged.loc[frame_merged['_merge'] == "left_only", year_column_name]))
-
-		# adjust and return
-		adjusted_column = frame_merged[value_column_name]/frame_merged['cpi'] * max_cpi_index
-		return(adjusted_column)
-
-
-if __name__ == "__main__":
-	#### examples
-
-	cpi_data = BLS_API.get_cpi_adjustment_range(2000,2019)
-	print(cpi_data)
-	exit()
-
-
-	# series ids
-	employment_series_id = BLS_API.employment_series_id(measure_code="employment")
-	labor_force_series_id = BLS_API.employment_series_id(measure_code="labor force")
-	wage_series_id = BLS_API.wage_series_id()
-
-	# series retreived
-	employment_raw = BLS_API.get_series(employment_series_id, 2014, 2018)
-	labor_force_raw = BLS_API.get_series(labor_force_series_id, 2014, 2018)
-	wage_raw = BLS_API.get_series(wage_series_id, 2014, 2018)
-
-	print(employment_raw)
-	exit()
-
-	# to dataframes
-	employment = BLS_API.parse_api_response(employment_raw)
-	labor_force = BLS_API.parse_api_response(labor_force_raw)
-	wage = BLS_API.parse_api_response(wage_raw)
-	
-	employment.to_pickle('employment_pickled.pkl')
-	labor_force.to_pickle('labor_force_pickled.pkl')
-	wage.to_pickle('wage_pickled.pkl')
-	
-	employment = pd.read_pickle('employment_pickled.pkl')
-	labor_force = pd.read_pickle('labor_force_pickled.pkl')
-	wage = pd.read_pickle('wage_pickled.pkl')
-
-	employment_change_example = Calculations.employment_change(employment, labor_force, "2015-09", "2018-05")
-	wage_change_example = Calculations.wage_change(wage, "2015-09", "2018-05")
-
-	print(wage_change_example)
-	
-
