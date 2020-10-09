@@ -1,37 +1,39 @@
 import pandas as pd
 import numpy as np
+from roi import utilities
+import seaborn as sns
+from matplotlib import pyplot as plt
 
-def dataframe_groups_to_ndarray(dataframe, groupby_columns, value_to_groups):
-	"""
-	This method takes a pandas dataframe and yields a numpy array of arrays containing values split up by group.
-
-	Parameters:
-	-----------
-	dataframe : Pandas DataFrame
-		Dataframe containing microdata with object or factor variables denoting groups
-
-	groupby_columns : list(str)
-		list of column names e.g. "gender" or "race"
-
-	value_to_groups : str
-		Column name containing the value which will be split into groups
-
-	Returns
-	-------
-	A tuple: (numpy[N] with group names, multidimensional array with as many sub-arrays (N) as groups)
-	"""
-	grouped = dataframe.groupby(groupby_columns)[value_to_groups].apply(lambda x: np.array(x.values))
-	groups = np.array(grouped.index)
-	list_of_values = np.asarray(grouped)
-	return (groups, list_of_values)
+#sns.set_theme(style="whitegrid") # set seaborn theme
 
 class Metric():
-	def __init__(self):
-		return(None)
+	def __init__(self, unique_groups, grouped_values):
+		self.unique_groups = unique_groups
+		self.grouped_values = grouped_values
+		self.ungrouped_observations = np.concatenate(self.grouped_values).flatten()
+		#self.group_identities = np.array([unique_groups[group_index] for group_index, group in enumerate(grouped_values) for item in group])
+		self.n_groups = len(self.unique_groups)
+		self.n = len(self.ungrouped_observations)
+		self.viz = self.simple_viz(self.unique_groups, self.grouped_values)
 
+	# factory method
 	@classmethod
-	def from_dataframe(cls, frame, group_column, value_column):
-		return(None)
+	def from_dataframe(cls, frame, group_columns, value_column):
+		unique_groups, grouped_values = utilities.dataframe_groups_to_ndarray(frame, group_columns, value_column)
+		cls.summary = utilities.multiple_describe(frame, group_columns, value_column)
+		return(cls(unique_groups, grouped_values))
+
+	@staticmethod
+	def simple_viz(unique_groups, grouped_values):
+		x = np.array(grouped_values)
+		fig, ax = plt.subplots(1,1)
+		plot = sns.boxplot(data = x, labels=[unique_groups], ax = ax, orient='h', showfliers=False) # annotate interpretation
+		ax.set_yticklabels(unique_groups)
+		fig.tight_layout()
+		plt.close()
+		return(fig)
+
+
 
 class Supporting:
 	"""

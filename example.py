@@ -3,6 +3,7 @@ import numpy as np
 from roi import earnings, types, external, equity, utilities, completion, employment
 from datetime import date
 import sys
+from matplotlib import pyplot as plt
 #print(sys.modules.keys())
 
 
@@ -28,7 +29,7 @@ if __name__ == "__main__":
 
 	test_microdata = pd.read_csv("testing/testing-data/test_microdata.csv")
 	test_microdata['age_at_start'] = test_microdata['age'] - (date.today().year - test_microdata['program_start'])
-	test_microdata['age_group_at_start'] = earnings.Utilities.age_to_group(test_microdata['age_at_start'])
+	test_microdata['age_group_at_start'] = utilities.age_to_group(test_microdata['age_at_start'])
 
 	print(test_microdata)
 
@@ -146,38 +147,13 @@ if __name__ == "__main__":
 	#exit()
 
 	# Employment
-	test_microdata['start_month_year'] = test_microdata['program_start'].astype(str) + '-' + test_microdata['start_month'].astype(str).str.pad(2, fillchar='0')
-	test_microdata['end_month_year'] = test_microdata['program_end'].astype(str) + '-' + test_microdata['end_month'].astype(str).str.pad(2, fillchar='0')
-	employment = employment.Employment_Likelihood(test_microdata, 'program', 'start_month_year', 'end_month_year', 'employed_at_end', 'employed_at_start','age_group_at_start','state')
-	print(employment.employment_premium)
-	exit()
+	#test_microdata['start_month_year'] = test_microdata['program_start'].astype(str) + '-' + test_microdata['start_month'].astype(str).str.pad(2, fillchar='0')
+	#test_microdata['end_month_year'] = test_microdata['program_end'].astype(str) + '-' + test_microdata['end_month'].astype(str).str.pad(2, fillchar='0')
+	#employment = employment.Employment_Likelihood(test_microdata, 'program', 'start_month_year', 'end_month_year', 'employed_at_end', 'employed_at_start','age_group_at_start','state')
+	#print(employment.employment_premium)
+	#exit()
 	#exit()
 
-
-	# Gini test
-	a = np.random.normal(2,5,100)
-	b = np.random.normal(10,6,100)
-	c = np.random.normal(120,1,100)
-	all_ = np.array([a,b,c])
-	g = equity.Gini([1,2,3],all_)
-	print(g.G_within)
-	print(g.G_between)
-	print(g.G_overall)
-	print(g.G_within + g.G_between)
-	exit()
-
-
-
-	
-	cps = earnings.CPS_Ops()
-	wagedif = cps.mincer_based_wage_change(36, 92, 30, 10000, 4)
-	wagedif2 = cps.mincer_based_wage_change(36, 92, 55, 50000, 4)
-	print(wagedif)
-	print(wagedif2)
-	exit()	
-	predicted_wages = cps.predicted_wages([73,111],[4,10])
-	print(predicted_wages)
-	exit()	
-
-
-
+	# Testing equity class
+	metric_test = equity.Metric.from_dataframe(test_microdata, 'program', 'earnings_end')
+	metric_test.viz.savefig('hello.png')
