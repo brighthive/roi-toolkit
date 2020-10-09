@@ -123,6 +123,30 @@ def multiple_describe(frame_, grouping_factors, value_column_name):
 	grouped = frame_.groupby(grouping_factors, as_index=False)[value_column_name].agg({'n':np.size,'mean':np.mean, 'median':np.median, 'sd':np.std, 'min':np.min, 'max':np.max})
 	return(grouped)
 
+def dataframe_groups_to_ndarray(dataframe, groupby_columns, value_to_groups):
+	"""
+	This method takes a pandas dataframe and yields a numpy array of arrays containing values split up by group.
+
+	Parameters:
+	-----------
+	dataframe : Pandas DataFrame
+		Dataframe containing microdata with object or factor variables denoting groups
+
+	groupby_columns : list(str)
+		list of column names e.g. "gender" or "race"
+
+	value_to_groups : str
+		Column name containing the value which will be split into groups
+
+	Returns
+	-------
+	A tuple: (numpy[N] with group names, multidimensional array with as many sub-arrays (N) as groups)
+	"""
+	grouped = dataframe.groupby(groupby_columns)[value_to_groups].apply(lambda x: np.array(x.values))
+	groups = np.array(grouped.index)
+	list_of_values = np.asarray(grouped)
+	return (groups, list_of_values)
+
 class Adjustments:
 
 	def adjust_to_current_dollars(frame_, year_column_name, value_column_name, cpi_adjustments):
