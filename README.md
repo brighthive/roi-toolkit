@@ -35,7 +35,7 @@ The following are principles that guided the development of the ROI Toolkit and 
 
 * **Likely actual use**
 
-    The deployment of the resulting ROI metrics will drive behavior change across their user base. We formulate metrics bearing in mind that measures developed using past data will be used to drive changes in the distribution of future data, and try to select metrics which are likely to result in positive behavior change, and which are robust in the face of differing institutional incentives.
+    The deployment of the resulting ROI metrics will drive behavior change across their user base. We formulate metrics bearing in mind that measures developed using past data will be used to drive changes in the distribution of future data, and try to select metrics which are likely to result in positive behavior change, and which are robust in the face of differing institutional incentives. We are mindful of [Goodhart's Law](https://en.wikipedia.org/wiki/Goodhart%27s_law) and [Campbell's Law](https://en.wikipedia.org/wiki/Campbell%27s_law).
 
 
 ### Background
