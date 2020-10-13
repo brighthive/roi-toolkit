@@ -20,22 +20,22 @@ The following are principles that guided the development of the ROI Toolkit and 
 
 * **Comprehensibility**
 
-...Metrics need to be easily understood by their users. Complexity reduces usability, and though some informative metrics are unavoidably “black box” for users without statistical training, we strive to make sure that recommended metrics are explainable to their potential users. Metrics should be easily interpretable for all stakeholders.
+    Metrics need to be easily understood by their users. Complexity reduces usability, and though some informative metrics are unavoidably “black box” for users without statistical training, we strive to make sure that recommended metrics are explainable to their potential users. Metrics should be easily interpretable for all stakeholders.
 
 
 * **Replicability**
 
-...Metrics should be replicability both across time and across different geographic locales. Variables necessary for metric calculation should be reliably available for the foreseeable future, and there should be a reasonable expectation that these variables will be available in other future locations.
+    Metrics should be replicability both across time and across different geographic locales. Variables necessary for metric calculation should be reliably available for the foreseeable future, and there should be a reasonable expectation that these variables will be available in other future locations.
 
 
 * **Statistical Validity**
 
-...Metrics should defensibly represent the real-world quantities they claim to measure. Though perfect statistical rigor may not be possible, we try to formulate metrics that reliably estimate the underlying phenomena they exist to represent.
+    Metrics should defensibly represent the real-world quantities they claim to measure. Though perfect statistical rigor may not be possible, we try to formulate metrics that reliably estimate the underlying phenomena they exist to represent.
 
 
-**Likely actual use.**
+* **Likely actual use**
 
-...The deployment of the resulting ROI metrics will drive behavior change across their user base. We formulate metrics bearing in mind that measures developed using past data will be used to drive changes in the distribution of future data, and try to select metrics which are likely to result in positive behavior change, and which are robust in the face of differing institutional incentives.
+    The deployment of the resulting ROI metrics will drive behavior change across their user base. We formulate metrics bearing in mind that measures developed using past data will be used to drive changes in the distribution of future data, and try to select metrics which are likely to result in positive behavior change, and which are robust in the face of differing institutional incentives.
 
 
 ### Background
