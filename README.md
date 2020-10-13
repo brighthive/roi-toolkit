@@ -1,6 +1,6 @@
 # Introduction
 
-The costs of education are rising considerably faster than inflation. Students and their families make sizable investments--of time, tuition, and foregone earnings--but see a wide range returns. Wage, employment, completion, and satisfaction outcomes vary dramatically, and students often lack the data necessary to make informed educational choices that can lead to a better future.
+The costs of education are rising considerably faster than inflation. Students and their families make sizable investments--of time, tuition, and foregone earnings--but see a wide range of returns. Wage, employment, completion, and satisfaction outcomes vary dramatically, and students often lack the data necessary to make informed educational choices that can lead to a better future.
 
 Universities, job training programs, policymakers, and workforce organizations face a similarly challenging information environment. Without clear data on student outcomes, institutions are sometimes flying blind: they lack the ability to rigorously evaluate and compare different programs. Without this capacity, it can be difficult to pinpoint areas of improvement and identify key shortcomings. Without reliable data on which areas need improvement, in other words, it's hard to know how to improve.
 
@@ -10,8 +10,32 @@ The **Return on Investment (ROI) Toolkit** in this repository provides code and 
 
 Students and workers of all ages in America desperately need greater transparency on the return on investment (ROI) for all degrees, credentials, and certificates. The ROI Toolkit is a first step on the road to delivering it.
 
+# Status of the ROI Toolkit
+
+The Toolkit is **open-source**. It can be forked or cloned by anyone. Moreover, pull requests can be submitted to the Toolkit's maintainers to fix bugs or add additional metrics or functionalities. Please note that use of the Toolkit does not imply BrightHive's endorsement of the setting or particular use of the calculated metrics.
+
 ## Principles
 
+The following are principles that guided the development of the ROI Toolkit and that should be kept in mind by users and future contributors.
+
+* **Comprehensibility**
+
+...Metrics need to be easily understood by their users. Complexity reduces usability, and though some informative metrics are unavoidably “black box” for users without statistical training, we strive to make sure that recommended metrics are explainable to their potential users. Metrics should be easily interpretable for all stakeholders.
+
+
+* **Replicability**
+
+...Metrics should be replicability both across time and across different geographic locales. Variables necessary for metric calculation should be reliably available for the foreseeable future, and there should be a reasonable expectation that these variables will be available in other future locations.
+
+
+* **Statistical Validity**
+
+...Metrics should defensibly represent the real-world quantities they claim to measure. Though perfect statistical rigor may not be possible, we try to formulate metrics that reliably estimate the underlying phenomena they exist to represent.
+
+
+**Likely actual use.**
+
+...The deployment of the resulting ROI metrics will drive behavior change across their user base. We formulate metrics bearing in mind that measures developed using past data will be used to drive changes in the distribution of future data, and try to select metrics which are likely to result in positive behavior change, and which are robust in the face of differing institutional incentives.
 
 
 ### Background
