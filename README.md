@@ -1,24 +1,18 @@
-# ROI Toolkit
+# Introduction
 
-This repository contains scripts related to the ongoing ROI metrics project being piloted in Colorado. As of 12/5/2019 these scripts are for prototyping purposes only.
+The costs of education are rising considerably faster than inflation. Students and their families make sizable investments--of time, tuition, and foregone earnings--but see a wide range returns. Wage, employment, completion, and satisfaction outcomes vary dramatically, and students often lack the data necessary to make informed educational choices that can lead to a better future.
 
-### Contents
+Universities, job training programs, policymakers, and workforce organizations face a similarly challenging information environment. Without clear data on student outcomes, institutions are sometimes flying blind: they lack the ability to rigorously evaluate and compare different programs. Without this capacity, it can be difficult to pinpoint areas of improvement and identify key shortcomings. Without reliable data on which areas need improvement, in other words, it's hard to know how to improve.
 
-- **macrostats**
+The organizations that exist to serve students and worker/learners desperately also need tools with which to assess the equity impacts of the programs they offer. One of the most persistent challenges in this domain lies with disentangling program effects from selection effects: do students from one program earn higher wages as a result of the program, or are students who will go on to earn high wages more likely to pick that program in the first place? Rigorous equity metrics can help programs start to answer questions like these, allowing them to invest in ways to ensure that educational programs serve all of the students they're intended to help.
 
-Scripts and functions related to macroeconomic statistics. Currently this folder just contains *macrostats.py*, which pulls data from the Bureau of Labor Statistics (BLS) API and provides some basic calculation functions, such as the functionality to calculate the change in employment in a given state over a provided time frame.
+The **Return on Investment (ROI) Toolkit** in this repository provides code and data for use in calculating these metrics, as well as documentation, reading material, and guidance for deploying them. It is intended for use by technical personnel and analytic staff at educational institutions and the organizations that support them. This code can be used to calculate key equity metrics, projected yearly and lifetime earnings, and other key indicators. It also contains methods for interacting with public datasets and APIs useful for conducting these calculations, including functionality to adjust for inflation, calculate state- and age-level mean earnings, and estimate socioeconomic status based on street address.
 
-- **ses**
+Students and workers of all ages in America desperately need greater transparency on the return on investment (ROI) for all degrees, credentials, and certificates. The ROI Toolkit is a first step on the road to delivering it.
 
-Scripts and functions related to socioeconomic status calculation. Currently this folder just contains *ses.py*, which includes methods that call the U.S. Census Geocoding API in order to convert street addresses into block group-level FIPS geocodes, and which determine the deprivation (SES) quintile for a given geocode based on ADI data.
+## Principles
 
-- **data**
 
-Data read in or produced by these scripts. Currently contains ADI statistics downloaded from an external source (see below).
-
-- **calcs.py**
-
-Methods that will be necessary in ultimate ROI calculations, such as Theil Index calculation or sinmple aggregation across groups.
 
 ### Background
 
