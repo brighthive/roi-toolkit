@@ -327,32 +327,36 @@ class Theil_L:
 		return(l_ratio)
 
 
-class Variance_Analysis:
+class Variance_Analysis(Metric):
 	# decomposition of income inequality by subgroups: http://www.fao.org/3/a-am342e.pdf
 	# To reduce dependencies and improve flexibility, we implement our own ANOVA
 	# should implement both bayesian (nonparametric) and frequentist (parametric) anova
 	# Please note that in this implementation, np.var calculates the POPULATION variance, not the SAMPLE variance
 
-	def Variance_Components(array_of_groups, array_of_values):
-		ungrouped_observations = np.concatenate(array_of_values).flatten()
-		n = len(ungrouped_observations)
-		total_variance = np.var(ungrouped_observations)
+	def calculate(self):
+		self.within = self.variance_within(self.grouped_values, self.n)
+		self.between = self.variance_between(self.grouped_values)
+		self.overall = self.total_variance(self.ungrouped_observations)
+		self.ratio = self.between / self.overall
+		self.residual = self.overall - (self.within + self.between) # this should equal zero because variance decomposes perfectly, but floating-point meshugas could result in weirdness
 
-		group_variances = [np.var(group) for group in array_of_values]
+	@staticmethod
+	def variance_within(array_of_values, n):
+		group_variances = [np.nanvar(group) for group in array_of_values]
 		group_weights = np.asarray([len(group)/n for group in array_of_values])
-		within_group_means = [np.mean(group) for group in array_of_values]
+		within_group_variance = np.nansum(group_variances * group_weights)
+		return(within_group_variance)
 
-		within_group_variance = np.sum(group_variances * group_weights)
-		cross_group_variance = np.var(within_group_means)
-		
-		return(total_variance, within_group_variance, cross_group_variance)
+	@staticmethod
+	def variance_between(array_of_values):
+		within_group_means = [np.nanmean(group) for group in array_of_values]
+		cross_group_variance = np.nanvar(within_group_means)
+		return(cross_group_variance)
 
-	def Ratio(array_of_groups, array_of_values):
-		total_variance, within_group_variance, cross_group_variance = ANOVA.Variance_Components(array_of_groups, array_of_values)
-		return(cross_group_variance/total_variance)
-
-	def Analysis(array_of_groups, array_of_values):
-		return(None)
+	@staticmethod
+	def total_variance(observations):
+		total_variance = np.nanvar(observations)
+		return(total_variance)
 
 
 class Gini(Metric):

@@ -155,5 +155,12 @@ if __name__ == "__main__":
 	#exit()
 
 	# Testing equity class
-	metric_test = equity.Metric.from_dataframe(test_microdata, 'program', 'earnings_end')
-	metric_test.viz.savefig('hello.png')
+	#metric_test = equity.Metric.from_dataframe(test_microdata, 'program', 'earnings_end')
+	#metric_test.viz.savefig('hello.png')
+	vartest = equity.Variance_Analysis.from_dataframe(test_microdata, 'program', 'earnings_end')
+	vartest.calculate()
+	print(vartest.ratio)
+	#gini_test.viz.savefig('hello.png')
+
+
+
