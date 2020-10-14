@@ -11,7 +11,6 @@ class Metric():
 		self.unique_groups = unique_groups
 		self.grouped_values = grouped_values
 		self.ungrouped_observations = np.concatenate(self.grouped_values).flatten()
-		#self.group_identities = np.array([unique_groups[group_index] for group_index, group in enumerate(grouped_values) for item in group])
 		self.n_groups = len(self.unique_groups)
 		self.n = len(self.ungrouped_observations)
 		self.viz = self.simple_viz(self.unique_groups, self.grouped_values)
@@ -33,39 +32,7 @@ class Metric():
 		plt.close()
 		return(fig)
 
-
-
-class Supporting:
-	"""
-	Class for miscellaneous supporting calculation functions.
-	"""
-	def group_aggregation(dataframe, aggregation_category_list, variable_to_aggregate, aggregation_method):
-		"""
-		This method is just a shortener for a groupby aggregation.
-
-		Parameters:
-		-----------
-		dataframe : Pandas DataFrame
-			Dataframe containing microdata
-
-		aggregation_category_list : list(str)
-			list of column names e.g. "gender" or "race"
-
-		variable_to_aggregate : str
-			Column name containing the value which will be aggregated
-
-		aggregation_method: str
-			Function name e.g. "mean" or "sum." Must be a legit function!
-
-		Returns
-		-------
-		A dataframe with column for the aggregated value. If method is X and original value is Y, the aggregated column is X_Y.
-		"""
-		aggregated_name = "{}_{}".format(aggregation_method, variable_to_aggregate)
-		aggregated = test_microdata.groupby(aggregation_category_list)[variable_to_aggregate].aggregate(aggregation_method).reset_index().rename(columns={variable_to_aggregate:aggregated_name})		
-		return aggregated
-
-class Theil_T:
+class Theil_T(Metric):
 	"""
 	Class provides methods for calculating individual terms in the Theil T index, as well as
 	(1) a function for calculating the index itself and
@@ -82,6 +49,7 @@ class Theil_T:
 	https://www.usi.edu/media/3654811/Analysis-of-Inequality.pdf
 
 	"""
+
 	def theil_within_group(vector_of_values):
 		"""
 		T_i in the Theil index expression
@@ -386,44 +354,83 @@ class Variance_Analysis:
 	def Analysis(array_of_groups, array_of_values):
 		return(None)
 
-class Gini:
+
+
+'''
+		self.unique_groups = unique_groups
+		self.grouped_values = grouped_values
+		self.ungrouped_observations = np.concatenate(self.grouped_values).flatten()
+		self.n_groups = len(self.unique_groups)
+		self.n = len(self.ungrouped_observations)
+		self.viz = self.simple_viz(self.unique_groups, self.grouped_values)
+'''
+
+
+class Gini(Metric):
 	# Please note as well that the Gini index is not perfectly decomposable, and contains a residual element K
 	# 
-	
-	def __init__(self, array_of_groups, array_of_values):
-		self.groups = array_of_groups
-		self.values = array_of_values
-		self.G_within = self.gini_within(array_of_values)
-		self.G_between = self.gini_between(array_of_values)
-		self.G_overall = self.gini(self.values.flatten())
+	def calculate(self):
+		self.G_within = self.gini_within(self.grouped_values)
+		self.G_between = self.gini_between(self.grouped_values)
+		self.G_overall = self.gini(self.ungrouped_observations)
 		self.residual = self.G_overall - (self.G_within + self.G_between)
+		self.ratio = self.G_between / self.G_overall
 
 	@staticmethod
 	def gini_within(array_of_values):
 		ungrouped_observations = np.concatenate(array_of_values).flatten()
 		n = len(ungrouped_observations)
 		group_shares = np.asarray([len(group)/n for group in array_of_values])
-		value_shares = np.asarray([np.sum(group)/np.sum(ungrouped_observations) for group in array_of_values])
+		value_shares = np.asarray([np.nansum(group)/np.nansum(ungrouped_observations) for group in array_of_values])
 		group_weights = value_shares * group_shares
 		ginis = np.array([Gini.gini(group) for group in array_of_values])
-		G_within = np.sum(ginis * group_weights)
+		G_within = np.nansum(ginis * group_weights)
 		return(G_within)
 
 	@staticmethod
 	def gini_between(array_of_values):
-		means_replaced = np.array([np.repeat(np.mean(group), len(group)) for group in array_of_values]).flatten()
-		G_between = Gini.gini(means_replaced)
+		means_replaced = np.concatenate([np.repeat(np.nanmean(group), len(group)) for group in array_of_values])
+		G_between = Gini.gini(means_replaced)	
 		return(G_between)
-
 
 	@staticmethod
 	def gini(values):
 		n = len(values)
-		xbar = np.mean(values)
+		xbar = np.nanmean(values)
 		ad = np.array([abs(i - j) for i in values for j in values])
-		G = np.sum(ad)/(2*n*n*xbar)
+		G = np.nansum(ad)/(2*n*n*xbar)
 		return(G)
 
+
+class Supporting:
+	"""
+	Class for miscellaneous supporting calculation functions.
+	"""
+	def group_aggregation(dataframe, aggregation_category_list, variable_to_aggregate, aggregation_method):
+		"""
+		This method is just a shortener for a groupby aggregation.
+
+		Parameters:
+		-----------
+		dataframe : Pandas DataFrame
+			Dataframe containing microdata
+
+		aggregation_category_list : list(str)
+			list of column names e.g. "gender" or "race"
+
+		variable_to_aggregate : str
+			Column name containing the value which will be aggregated
+
+		aggregation_method: str
+			Function name e.g. "mean" or "sum." Must be a legit function!
+
+		Returns
+		-------
+		A dataframe with column for the aggregated value. If method is X and original value is Y, the aggregated column is X_Y.
+		"""
+		aggregated_name = "{}_{}".format(aggregation_method, variable_to_aggregate)
+		aggregated = test_microdata.groupby(aggregation_category_list)[variable_to_aggregate].aggregate(aggregation_method).reset_index().rename(columns={variable_to_aggregate:aggregated_name})		
+		return aggregated
 
 
 
