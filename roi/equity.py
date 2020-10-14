@@ -355,24 +355,13 @@ class Variance_Analysis:
 		return(None)
 
 
-
-'''
-		self.unique_groups = unique_groups
-		self.grouped_values = grouped_values
-		self.ungrouped_observations = np.concatenate(self.grouped_values).flatten()
-		self.n_groups = len(self.unique_groups)
-		self.n = len(self.ungrouped_observations)
-		self.viz = self.simple_viz(self.unique_groups, self.grouped_values)
-'''
-
-
 class Gini(Metric):
 	# Please note as well that the Gini index is not perfectly decomposable, and contains a residual element K
 	# 
 	def calculate(self):
-		self.G_within = self.gini_within(self.grouped_values)
-		self.G_between = self.gini_between(self.grouped_values)
-		self.G_overall = self.gini(self.ungrouped_observations)
+		self.within = self.gini_within(self.grouped_values)
+		self.between = self.gini_between(self.grouped_values)
+		self.overall = self.gini(self.ungrouped_observations)
 		self.residual = self.G_overall - (self.G_within + self.G_between)
 		self.ratio = self.G_between / self.G_overall
 
