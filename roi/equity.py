@@ -3,8 +3,7 @@ import numpy as np
 from roi import utilities
 import seaborn as sns
 from matplotlib import pyplot as plt
-
-#sns.set_theme(style="whitegrid") # set seaborn theme
+import warnings
 
 class Metric():
 	def __init__(self, unique_groups, grouped_values):
@@ -14,6 +13,12 @@ class Metric():
 		self.n_groups = len(self.unique_groups)
 		self.n = len(self.ungrouped_observations)
 		self.viz = self.simple_viz(self.unique_groups, self.grouped_values)
+		self.nans = np.sum(np.isnan(self.ungrouped_observations))
+
+		if self.nans > 0:
+			warnings.warn("Data passed contains {} NA values. All equity metrics are calculated by ignoring NA values, in effect dropping them. Please ensure that you have a strategy for dealing with these missing values. If values are not missing at random, e.g. if individuals with missing values have common traits, then ALL METRICS calculated will be biased.".format(self.nans))
+
+		# add nan handling
 
 	# factory method
 	@classmethod
@@ -50,6 +55,16 @@ class Theil_T(Metric):
 
 	"""
 
+	def calculate(self):
+		self.within = self.first_term(self.grouped_values)
+		self.between = self.second_term(self.grouped_values)
+		self.overall = self.within + self.between
+		self.ratio = self.between / self.overall
+
+		if min(self.ungrouped_observations < 0):
+			raise ValueError("Theil indices can be calculated using only positive values. Data passed contains negative values. If you have negative values, use the Gini() or Variance_Analysis() equity metric classes")
+
+	@staticmethod
 	def theil_within_group(vector_of_values):
 		"""
 		T_i in the Theil index expression
@@ -60,13 +75,14 @@ class Theil_T(Metric):
 		"""
 		x = vector_of_values # for readability
 		N = len(x)
-		mu = np.mean(x)
+		mu = np.nanmean(x)
 		xi_over_mu = x / mu
 		xi_over_mu[xi_over_mu < 0] = 0
 		ln_xi_over_mu = np.log(xi_over_mu)
-		theil = (1/N)*np.sum(xi_over_mu * ln_xi_over_mu)
+		theil = (1/N)*np.nansum(xi_over_mu * ln_xi_over_mu)
 		return theil
 
+	@staticmethod
 	def s_i(array, N, mu):
 		"""
 		s_i in the Theil index expression
@@ -87,10 +103,11 @@ class Theil_T(Metric):
 		Float
 		"""
 		N_i = len(array)
-		x_i_bar = np.mean(array)
+		x_i_bar = np.nanmean(array)
 		s_i = (N_i/N) * (x_i_bar/mu)
 		return s_i
 
+	@staticmethod
 	def first_term(list_of_groups):
 		"""
 		First term (sum of within-group inequalities) in the Theil index formula
@@ -106,13 +123,13 @@ class Theil_T(Metric):
 		"""
 		full_population = np.concatenate(list_of_groups)
 		N = len(full_population)
-		mu = np.mean(full_population)
+		mu = np.nanmean(full_population)
 		T_i = np.array([Theil_T.theil_within_group(group) for group in list_of_groups])
 		s_i = np.array([Theil_T.s_i(group, N=N, mu=mu) for group in list_of_groups])
-		first_term = np.sum(T_i * s_i)
+		first_term = np.nansum(T_i * s_i)
 		return first_term
 
-	# FIX THIS SHIT UP
+	@staticmethod
 	def second_term(list_of_groups):
 		"""
 		Second term (sum of cross-group inequalities) in the Theil index formula
@@ -128,60 +145,13 @@ class Theil_T(Metric):
 		"""
 		full_population = np.concatenate(list_of_groups)
 		N = len(full_population)
-		mu = np.mean(full_population)
+		mu = np.nanmean(full_population)
 		s_i = np.array([Theil_T.s_i(group, N=N, mu=mu) for group in list_of_groups])
-		x_i = np.array([np.mean(group) for group in list_of_groups])
-		second_term = np.sum(s_i * np.log(x_i / mu))
+		x_i = np.array([np.nanmean(group) for group in list_of_groups])
+		second_term = np.nansum(s_i * np.log(x_i / mu))
 		return second_term
 
-	def Calculate_Index(array_of_groups):
-		"""
-		The actual Theil Index: sum of within-group and cross-group inequality
-		
-		Parameters:
-		-----------
-		array_of_groups : numpy multidimensional vector
-			Array[N] of arrays representing N subgroups
-
-		Returns
-		-------
-		Scalar representing the Theil index
-		"""
-
-		Index = Theil_T.first_term(array_of_groups) + Theil_T.second_term(array_of_groups)
-		return Index
-
-	def Calculate_Ratio(array_of_groups):
-		"""
-		Ratio between second term of index (cross-group inequality) and the full index.
-		Roughly interpretable as the portion of inequality that is accounted for by cross-group inequality.
-		
-		Parameters:
-		-----------
-		array_of_groups : numpy multidimensional vector
-			Array[N] of arrays representing N subgroups
-
-		Returns
-		-------
-		Scalar representing the ratio
-		"""
-		first_term = Theil_T.first_term(array_of_groups)
-		second_term = Theil_T.second_term(array_of_groups)
-		ratio = second_term / (first_term + second_term)
-		return ratio
-
-	def Ratio_From_DataFrame(dataframe, variable_of_concern, grouping_variable):
-		groups, values = dataframe_groups_to_ndarray(dataframe, grouping_variable, variable_of_concern)
-
-		zero_or_less = (np.concatenate(values).flatten() <= 0).sum()
-		if (zero_or_less > 0):
-			raise ValueError("Variable provided contains zero or negative values. The Theil T index works only with positive values.")
-
-		t_ratio = Theil_T.Calculate_Ratio(values)
-		return(t_ratio)
-
-
-class Theil_L:
+class Theil_L(Metric):
 	"""
 	Class provides methods for calculating individual terms in the Theil L index, as well as
 	(1) a function for calculating the index itself and
@@ -198,6 +168,16 @@ class Theil_L:
 	https://www.usi.edu/media/3654811/Analysis-of-Inequality.pdf
 
 	"""
+	def calculate(self):
+		self.within = self.first_term(self.grouped_values)
+		self.between = self.second_term(self.grouped_values)
+		self.overall = self.within + self.between
+		self.ratio = self.between / self.overall
+
+		if min(self.ungrouped_observations < 0):
+			raise ValueError("Theil indices can be calculated using only positive values. Data passed contains negative values. If you have negative values, use the Gini() or Variance_Analysis() equity metric classes")
+
+	@staticmethod
 	def theil_within_group(vector_of_values):
 		"""
 		T_i in the Theil index expression
@@ -208,12 +188,13 @@ class Theil_L:
 		"""
 		x = vector_of_values # for readability
 		N = len(x)
-		mu = np.mean(x)
+		mu = np.nanmean(x)
 		mu_over_xi = mu / x
 		ln_mu_over_xi = np.log(mu_over_xi)
-		theil = (1/N)*np.sum(ln_mu_over_xi)
+		theil = (1/N)*np.nansum(ln_mu_over_xi)
 		return theil
 
+	@staticmethod
 	def s_i(array, N):
 		"""
 		s_i in the Theil index expression
@@ -237,6 +218,7 @@ class Theil_L:
 		s_i = (N_i/N)
 		return s_i
 
+	@staticmethod
 	def first_term(list_of_groups):
 		"""
 		First term (sum of within-group inequalities) in the Theil index formula
@@ -252,13 +234,13 @@ class Theil_L:
 		"""
 		full_population = np.concatenate(list_of_groups)
 		N = len(full_population)
-		mu = np.mean(full_population)
+		mu = np.nanmean(full_population)
 		L_i = np.array([Theil_L.theil_within_group(group) for group in list_of_groups])
 		s_i = np.array([Theil_L.s_i(group, N=N) for group in list_of_groups])
-		first_term = np.sum(L_i * s_i)
+		first_term = np.nansum(L_i * s_i)
 		return first_term
 
-	# FIX THIS SHIT UP
+	@staticmethod
 	def second_term(list_of_groups):
 		"""
 		Second term (sum of cross-group inequalities) in the Theil index formula
@@ -274,57 +256,11 @@ class Theil_L:
 		"""
 		full_population = np.concatenate(list_of_groups)
 		N = len(full_population)
-		mu = np.mean(full_population)
+		mu = np.nanmean(full_population)
 		s_i = np.array([Theil_L.s_i(group, N=N) for group in list_of_groups])
-		x_i = np.array([np.mean(group) for group in list_of_groups])
-		second_term = np.sum(s_i * np.log(mu / x_i))
+		x_i = np.array([np.nanmean(group) for group in list_of_groups])
+		second_term = np.nansum(s_i * np.log(mu / x_i))
 		return second_term
-
-	def Calculate_Index(array_of_groups):
-		"""
-		The actual Theil Index: sum of within-group and cross-group inequality
-		
-		Parameters:
-		-----------
-		array_of_groups : numpy multidimensional vector
-			Array[N] of arrays representing N subgroups
-
-		Returns
-		-------
-		Scalar representing the Theil index
-		"""
-
-		Index = Theil_L.first_term(array_of_groups) + Theil_L.second_term(array_of_groups)
-		return Index
-
-	def Calculate_Ratio(array_of_groups):
-		"""
-		Ratio between second term of index (cross-group inequality) and the full index.
-		Roughly interpretable as the portion of inequality that is accounted for by cross-group inequality.
-		
-		Parameters:
-		-----------
-		array_of_groups : numpy multidimensional vector
-			Array[N] of arrays representing N subgroups
-
-		Returns
-		-------
-		Scalar representing the ratio
-		"""
-		first_term = Theil_L.first_term(array_of_groups)
-		second_term = Theil_L.second_term(array_of_groups)
-		ratio = second_term / (first_term + second_term)
-		return ratio
-
-	def Ratio_From_DataFrame(dataframe, variable_of_concern, grouping_variable):
-		groups, values = dataframe_groups_to_ndarray(dataframe, grouping_variable, variable_of_concern)
-
-		zero_or_less = (np.concatenate(values).flatten() <= 0).sum()
-		if (zero_or_less > 0):
-			raise ValueError("Variable provided contains zero or negative values. The Theil T index works only with positive values.")
-
-		l_ratio = Theil_L.Calculate_Ratio(values)
-		return(l_ratio)
 
 
 class Variance_Analysis(Metric):
