@@ -3,6 +3,7 @@ import numpy as np
 from datetime import date
 from roi import settings
 from roi import external
+from roi import utilities
 from roi.utilities import Local_Data
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
@@ -22,7 +23,107 @@ TO do here:
 pd.set_option('display.float_format', lambda x: '%.3f' % x)
 
 CPS_Education_Levels = [("GED",73),("BA",111),("MA",123),("PHD",125)]
-CPS_Age_Groups = ['18 and under','19-25','26-34','35-54','55-64','65+']
+
+class Earnings_Premium:
+	def __init__(self, frame, state, prior_education, wage_at_start, wage_at_end, program_start_year, program_end_year, age):
+
+		# get external data necessary for calculation
+		self.mincer_params = Local_Data.mincer_params()
+		self.hs_grads_mean_wages = Local_Data.hs_grads_mean_wages()
+
+		# pile input data into class properties
+		self.data = frame
+		self.state = frame[state] # HERE - check for fip and format!
+		self.prior_education = frame[prior_education]
+		self.program_start_year = frame[program_start_year]
+		self.program_end_year = frame[program_end_year]
+		self.wage_at_start = frame[wage_at_start]
+		self.wage_at_end = frame[wage_at_end]
+		self.current_age = frame[age]
+
+		# conduct calculations
+		self.years_in_program = self.program_end_year - self.program_start_year
+		self.predicted_wage = self.mincer_predicted_wage(self.state, self.prior_education, self.current_age, self.wage_at_start, self.years_in_program)
+		self.full_premium = self.wage_at_end - self.predicted_wage
+
+	def mincer_predicted_wage(self, state, prior_education, current_age, starting_wage, years_passed):
+
+		"""
+		Given a state, a prior education level (CPS EDUC code), the current age of an individual, their wage
+		before entering an educational program, and the time they spent in the program, this function calculates
+		their counterfactual wage change, e.g. it calculates what their expected current wage would be if they had
+		not participated in the program.
+
+		It achieves this by using the relevant coefficients from the modified Mincer model fit in fit_mincer_model() above,
+		which approximate the value of an additional year of work experience given prior education and existing years
+		of work experience.
+
+		Parameters:
+		-----------
+		prior_education : int
+			Integer code describing individuals' prior education level
+			# see https://cps.ipums.org/cps-action/variables/EDUC#codes_section
+
+		current_age : int
+			Individuals' current age (post program)
+
+		starting_wage : float
+			Individuals' annual wage prior to starting educational program
+
+		years_passed : int
+			Program length, e.g. 2 years for an associate's degree
+
+		Returns
+		-------
+		float: the expected counterfactual wage change for an individual over the time they were in a program, in present-year dollars.
+
+		"""
+		schooling_coef = self.mincer_params['years_of_schooling']
+		schooling_x_exp_coef = self.mincer_params['years_of_schooling:work_experience']
+		exp_coef = self.mincer_params['work_experience']
+		exp2_coef = self.mincer_params['np.power(work_experience, 2)']
+		years_of_schooling = pd.cut(prior_education, bins=[-1, 60, 73, 81, 92, 111, 123, 124, 125], right=True, labels=[10,12,14,13,16,18,19,20]).astype(float) # this is a hack to get years of schooling; using the pandas function here for symmetry
+
+		# get values for calculation
+		work_experience_current = current_age - years_of_schooling - 6 # based on Heckman
+		work_experience_start = work_experience_current - years_passed
+
+		# if starting wage is not given for high school graduates, give them the mean high school wage
+		# do this for 18-25 year-old HS grads ONLY! This is defensible on the grounds that these individuals
+		# are just entering the labor force and are broadly similar to each other. The assumption is less defensible
+		# for older unemployed workers with high school degrees, who likely differ systematically from older EMPLOYED
+		# workers with high school degrees.
+		hs_mergeframe = pd.DataFrame(prior_education)
+		hs_mergeframe['state'] = state
+		hs_mergeframe['age_group'] = utilities.age_to_group(current_age - years_passed)
+		hs_mergeframe['entry_year'] = 2009
+
+		hs_merged = hs_mergeframe.merge(self.hs_grads_mean_wages, left_on=['state','age_group', 'entry_year'], right_on=['STATEFIP','age_group','YEAR'], how='left')
+		hsgrad_wages = hs_merged['mean_INCWAGE']
+
+		# replace!
+		starting_wage.loc[(current_age <= 25) & (pd.isna(starting_wage))] = hsgrad_wages.loc[(current_age <= 25) & (pd.isna(starting_wage))]
+
+		# deal with other missing wages
+
+		# calculate
+		# change in natural log is approximately equal to percentage change
+		value_start = schooling_x_exp_coef*work_experience_start*years_of_schooling + exp_coef*work_experience_start + exp2_coef*(work_experience_start**2)
+		value_end = schooling_x_exp_coef*work_experience_current*years_of_schooling + exp_coef*work_experience_current + exp2_coef*(work_experience_current**2)
+
+		# results
+		percentage_wage_change = value_end - value_start
+		counterfactual_current_wage = starting_wage * (1+percentage_wage_change)
+
+		return(counterfactual_current_wage)
+
+
+	# eliminate this???
+	def Group_Earnings_Premium(self, dataframe, earnings_before_column, earnings_after_column, start_year_column, end_year_column, age_at_start, statefip, edlevel, grouping_variable):
+		ind_level_earnings = self.Full_Earnings_Premium(dataframe, earnings_before_column, earnings_after_column, start_year_column, end_year_column, age_at_start, statefip, edlevel)
+		summaries = utilities.multiple_describe(ind_level_earnings, grouping_variable, 'earnings_premium')
+		# here - do not report if less than default number!
+		return(summaries)
 
 
 class Premium(object):
@@ -39,7 +140,6 @@ class Premium(object):
 
 		# fetch CPI adjustments from the Bureay of Labor Statistics
 		self.cpi_adjustments = Local_Data.cpi_adjustments()
-		#BLS_API.get_cpi_adjustment_range(self.base_year - 19, self.base_year) # need to be connected to the internet to fetch BLS data
 
 		# DELETE
 		#self.cpi_adjustment_factor = 1.5341408621736492#BLS_API.get_cpi_adjustment(1999,self.base_year) # CPS data is converted into 1999 base, and then (below) we convert it into present-year dollars
@@ -68,7 +168,7 @@ class Premium(object):
 		"""
 
 		# Validation
-		if age_group_at_start not in CPS_Age_Groups:
+		if age_group_at_start not in settings.General.CPS_Age_Groups:
 			raise ValueError("Invalid age group. Argument age_group_at_start must be in ['18 and under','19-25','26-34','35-54','55-64','65+']")
 		else:
 			pass
@@ -202,19 +302,5 @@ class Premium(object):
 		summaries = utilities.multiple_describe(ind_level_earnings, grouping_variable, 'earnings_premium')
 		# here - do not report if less than default number!
 		return(summaries)
-
-
-if __name__ == "__main__":
-
-	premium = Premium()
-
-	example_frame = pd.DataFrame([{"age_group":'26-34',"year_start":2010,"year_end":2014,"statefip":30},{"age_group":'19-25',"year_start":2010,"year_end":2014,"statefip":1},{"age_group":'26-34',"year_start":2009,"year_end":2011,"statefip":2},{"age_group":'26-34',"year_start":2014,"year_end":2019,"statefip":30}])
-
-	#example_frames_to_merge['adjusted'] = premium.adjust_to_current_dollars(example_frames_to_merge, 'column', cpi_adjustments = self.cpi_adjustments)
-
-	wage_change_example = premium.wage_change_across_years(2009,2012,'26-34',1)
-	wage_change_frame_example = premium.frames_wage_change_across_years(example_frame,'year_start','year_end','age_group','statefip')
-	print(wage_change_frame_example)
-	exit()
 
 

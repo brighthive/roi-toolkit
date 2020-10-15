@@ -51,18 +51,6 @@ if __name__ == "__main__":
 	# stats = test_summary.earnings_summaries(['program'])
 	# print(stats)
 
-	# Get average wage change for a given age group and state across years, based on CPS data
-
-	#prem = earnings.Premium()
-	#changes = prem.wage_change_across_years(start_year=2012, end_year=2016, age_group_at_start="19-25", statefip=8)
-	#print(changes)
-
-	# For a given dataframe, create a new column for the baseline wage change across years
-
-	# prem = earnings.Premium()
-	# test_microdata['group_change'] = prem.frames_wage_change_across_years(ind_frame=test_microdata, start_year_column='program_start', end_year_column='program_end', age_group_start_column='age_group_at_start', statefip_column='state', hsgrads_only = True)
-	# print(test_microdata)	
-
 	# Calculate the individual-level earnings premium for a single individual
 
 	#prem = earnings.Premium()
@@ -157,10 +145,32 @@ if __name__ == "__main__":
 	# Testing equity class
 	#metric_test = equity.Metric.from_dataframe(test_microdata, 'program', 'earnings_end')
 	#metric_test.viz.savefig('hello.png')
-	vartest = equity.Theil_L.from_dataframe(test_microdata, 'program', 'earnings_end')
-	vartest.calculate()
-	print(vartest.nans)
+	#vartest = equity.Theil_L.from_dataframe(test_microdata, 'program', 'earnings_end')
+	#vartest.calculate()
+	#print(vartest.nans)
 	#gini_test.viz.savefig('hello.png')
+
+	# Get average wage change for a given age group and state across years, based on CPS data
+
+	#changes = prem.wage_change_across_years(start_year=2012, end_year=2016, age_group_at_start="19-25", statefip=8)
+	#print(changes)
+
+	# For a given dataframe, create a new column for the baseline wage change across years
+
+
+	test_microdata['start_year'] = 2011
+	test_microdata['end_year'] = 2015
+	test_microdata['statefip'] = utilities.check_state_code_series(test_microdata['state'])
+	prem = earnings.Earnings_Premium(test_microdata, 'statefip', 'education_level', 'earnings_start', 'earnings_end', 'start_year', 'end_year', 'age')
+	test_microdata['predicted'] = prem.predicted_wage
+	test_microdata['raw_change'] = test_microdata['earnings_end'] - test_microdata['earnings_start']
+	test_microdata['premium'] = prem.full_premium
+	print(test_microdata)
+
+	#prem = earnings.Earnings_Premium().mincer_predicted_wage(state='08', prior_education=test_microdata['education_level'], current_age=test_microdata['age'], starting_wage=test_microdata['earnings_start'], years_passed=test_microdata['years_in_program'])
+	# test_microdata['group_change'] = prem.frames_wage_change_across_years(ind_frame=test_microdata, start_year_column='program_start', end_year_column='program_end', age_group_start_column='age_group_at_start', statefip_column='state', hsgrads_only = True)
+	# print(test_microdata)	
+
 
 
 
