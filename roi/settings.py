@@ -35,3 +35,6 @@ class File_Locations:
 
 class Defaults:
 	min_group_size = 30
+
+class General:
+	CPS_Age_Groups = ['18 and under','19-25','26-34','35-54','55-64','65+']

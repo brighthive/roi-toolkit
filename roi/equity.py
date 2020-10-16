@@ -330,37 +330,3 @@ class Gini(Metric):
 		G = np.nansum(ad)/(2*n*n*xbar)
 		return(G)
 
-
-class Supporting:
-	"""
-	Class for miscellaneous supporting calculation functions.
-	"""
-	def group_aggregation(dataframe, aggregation_category_list, variable_to_aggregate, aggregation_method):
-		"""
-		This method is just a shortener for a groupby aggregation.
-
-		Parameters:
-		-----------
-		dataframe : Pandas DataFrame
-			Dataframe containing microdata
-
-		aggregation_category_list : list(str)
-			list of column names e.g. "gender" or "race"
-
-		variable_to_aggregate : str
-			Column name containing the value which will be aggregated
-
-		aggregation_method: str
-			Function name e.g. "mean" or "sum." Must be a legit function!
-
-		Returns
-		-------
-		A dataframe with column for the aggregated value. If method is X and original value is Y, the aggregated column is X_Y.
-		"""
-		aggregated_name = "{}_{}".format(aggregation_method, variable_to_aggregate)
-		aggregated = test_microdata.groupby(aggregation_category_list)[variable_to_aggregate].aggregate(aggregation_method).reset_index().rename(columns={variable_to_aggregate:aggregated_name})		
-		return aggregated
-
-
-
-
