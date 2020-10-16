@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import warnings
 from pandas.api.types import is_numeric_dtype
+from roi import settings
 
 class Data:
 	state_crosswalk = {
@@ -184,10 +185,10 @@ class Adjustments:
 
 class Local_Data:
 	def all_mean_wages():
-		return(pd.read_csv(settings.File_Locations.mean_wages_location, converters={"state_code":utilities.check_state_code}))
+		return(pd.read_csv(settings.File_Locations.mean_wages_location, converters={"state_code":check_state_code}))
 
 	def hs_grads_mean_wages():
-		return(pd.read_csv(settings.File_Locations.hs_mean_wages_location, converters={"STATEFIP":utilities.check_state_code}))
+		return(pd.read_csv(settings.File_Locations.hs_mean_wages_location, converters={"STATEFIP":check_state_code}))
 
 	def mincer_params():
 		return(pd.read_pickle(settings.File_Locations.mincer_params_location))
@@ -196,10 +197,40 @@ class Local_Data:
 		return(pd.read_csv(settings.File_Locations.cpi_adjustments_location))
 
 	def bls_employment_series():
-		return(pd.read_csv(settings.File_Locations.bls_employment_location, converters={"state_code":utilities.check_state_code})) # read in states with leading zeroes, per FIPS
+		return(pd.read_csv(settings.File_Locations.bls_employment_location, converters={"state_code":check_state_code})) # read in states with leading zeroes, per FIPS
 
 	def bls_laborforce_series():
-		return(pd.read_csv(settings.File_Locations.bls_laborforce_location, converters={"state_code":utilities.check_state_code})) # read in states with leading zeroes, per FIPS
+		return(pd.read_csv(settings.File_Locations.bls_laborforce_location, converters={"state_code":check_state_code})) # read in states with leading zeroes, per FIPS
 
 	def bls_wage_series():
-		return(pd.read_csv(settings.File_Locations.bls_wage_location, converters={"state_code":utilities.check_state_code})) # read in states with leading zeroes, per FIPS
+		return(pd.read_csv(settings.File_Locations.bls_wage_location, converters={"state_code":check_state_code})) # read in states with leading zeroes, per FIPS
+
+class Supporting:
+	"""
+	Class for miscellaneous supporting calculation functions.
+	"""
+	def group_aggregation(dataframe, aggregation_category_list, variable_to_aggregate, aggregation_method):
+		"""
+		This method is just a shortener for a groupby aggregation.
+
+		Parameters:
+		-----------
+		dataframe : Pandas DataFrame
+			Dataframe containing microdata
+
+		aggregation_category_list : list(str)
+			list of column names e.g. "gender" or "race"
+
+		variable_to_aggregate : str
+			Column name containing the value which will be aggregated
+
+		aggregation_method: str
+			Function name e.g. "mean" or "sum." Must be a legit function!
+
+		Returns
+		-------
+		A dataframe with column for the aggregated value. If method is X and original value is Y, the aggregated column is X_Y.
+		"""
+		aggregated_name = "{}_{}".format(aggregation_method, variable_to_aggregate)
+		aggregated = test_microdata.groupby(aggregation_category_list)[variable_to_aggregate].aggregate(aggregation_method).reset_index().rename(columns={variable_to_aggregate:aggregated_name})		
+		return aggregated

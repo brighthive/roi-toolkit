@@ -3,7 +3,7 @@ from roi import settings, utilities, external
 class Employment_Likelihood:
 	def __init__(self, dataframe, program_identifier, entry_year_month, exit_year_month, employed_at_end, employed_at_start, age_group_at_start, state, query=False):
 		if query == False:
-			print("By default, the Employment_Likelihood class operates using an instance of the BLS_API() class with query = False")
+			print("By default, the Employment_Likelihood class operates using an instance of the BLS_API() class with query = False. This class will search locally for previously downloaded BLS files with which to work. If query = True, it will download them, provided the user has set a BLS API key.")
 		self.raw_likelihood_at_end = self._raw_likelihood_at_end(dataframe, program_identifier, employed_at_end)
 		self.raw_likelihood_change = self._raw_likelihood_change(dataframe, program_identifier, employed_at_end, employed_at_start)
 		self.data = dataframe

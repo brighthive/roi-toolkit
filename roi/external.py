@@ -39,8 +39,6 @@ LE + seasonal adjustment code[1 - U/S] + ?[1] + lfst_code[2] + ?[5] ?[2]
 
 """
 
-example_response = '{"status":"REQUEST_SUCCEEDED","responseTime":137,"message":[],"Results":{\n"series":\n[{"seriesID":"LAUST080000000000006","data":[{"year":"2019","period":"M10","periodName":"October","latest":"true","value":"3178070","footnotes":[{"code":"P","text":"Preliminary."}]},{"year":"2019","period":"M09","periodName":"September","value":"3177825","footnotes":[{}]},{"year":"2019","period":"M08","periodName":"August","value":"3173865","footnotes":[{}]},{"year":"2019","period":"M07","periodName":"July","value":"3189419","footnotes":[{}]},{"year":"2019","period":"M06","periodName":"June","value":"3186284","footnotes":[{}]},{"year":"2019","period":"M05","periodName":"May","value":"3127934","footnotes":[{}]},{"year":"2019","period":"M04","periodName":"April","value":"3119039","footnotes":[{}]},{"year":"2019","period":"M03","periodName":"March","value":"3123249","footnotes":[{}]},{"year":"2019","period":"M02","periodName":"February","value":"3132592","footnotes":[{}]},{"year":"2019","period":"M01","periodName":"January","value":"3118999","footnotes":[{}]},{"year":"2018","period":"M13","periodName":"Annual","value":"3096358","footnotes":[{}]},{"year":"2018","period":"M12","periodName":"December","value":"3136729","footnotes":[{}]},{"year":"2018","period":"M11","periodName":"November","value":"3133401","footnotes":[{}]},{"year":"2018","period":"M10","periodName":"October","value":"3135286","footnotes":[{}]},{"year":"2018","period":"M09","periodName":"September","value":"3124018","footnotes":[{}]},{"year":"2018","period":"M08","periodName":"August","value":"3114611","footnotes":[{}]},{"year":"2018","period":"M07","periodName":"July","value":"3126894","footnotes":[{}]},{"year":"2018","period":"M06","periodName":"June","value":"3115771","footnotes":[{}]},{"year":"2018","period":"M05","periodName":"May","value":"3071539","footnotes":[{}]},{"year":"2018","period":"M04","periodName":"April","value":"3060983","footnotes":[{}]},{"year":"2018","period":"M03","periodName":"March","value":"3056824","footnotes":[{}]},{"year":"2018","period":"M02","periodName":"February","value":"3054983","footnotes":[{}]},{"year":"2018","period":"M01","periodName":"January","value":"3025258","footnotes":[{}]},{"year":"2017","period":"M13","periodName":"Annual","value":"2992412","footnotes":[{}]},{"year":"2017","period":"M12","periodName":"December","value":"3022280","footnotes":[{}]},{"year":"2017","period":"M11","periodName":"November","value":"3027893","footnotes":[{}]},{"year":"2017","period":"M10","periodName":"October","value":"3030716","footnotes":[{}]},{"year":"2017","period":"M09","periodName":"September","value":"3035085","footnotes":[{}]},{"year":"2017","period":"M08","periodName":"August","value":"3019660","footnotes":[{}]},{"year":"2017","period":"M07","periodName":"July","value":"3019734","footnotes":[{}]},{"year":"2017","period":"M06","periodName":"June","value":"3007314","footnotes":[{}]},{"year":"2017","period":"M05","periodName":"May","value":"2966441","footnotes":[{}]},{"year":"2017","period":"M04","periodName":"April","value":"2957983","footnotes":[{}]},{"year":"2017","period":"M03","periodName":"March","value":"2952018","footnotes":[{}]},{"year":"2017","period":"M02","periodName":"February","value":"2945602","footnotes":[{}]},{"year":"2017","period":"M01","periodName":"January","value":"2924216","footnotes":[{}]}]}]\n}}'
-
 class Parameters:
 	BLS_measure_codes = {
 		"unemployment rate": "03",
@@ -299,7 +297,6 @@ class BLS_API:
 
 		return(employment)
 
-
 	def get_wage_data(self, state_code, start_year, end_year):
 
 		series_id = self.wage_series_id(state_code=state_code)
@@ -308,6 +305,26 @@ class BLS_API:
 		self.bls_wage_series = wage
 		return(wage)
 
+	def make_employment_rate_frame(self, employment_series, laborforce_series):
+		employment_rate_series = employment_series.merge(laborforce_series, on=["state_code", "month_year"], suffixes=("_emp","_labor"))
+		employment_rate_series['employment_rate'] = employment_rate_series['value_emp'] / employment_rate_series['value_labor']
+		final = employment_rate_series[['state_code','month_year','employment_rate']]
+		return(final)
+
+class Calculations:
+	"""
+	Functions that take in dataframes produced by the BLS API and calculate statistics that will feed into ROI metrics.
+
+	Methods
+	-------
+	employment_change(bls_employment_table, start_month, start_year, end_month, end_year)
+		Returns the change in employment in between two month/year pairs
+
+	wage_change(bls_wage_table, start_month, start_year, end_month, end_year)
+		Returns the change in employment in between two month/year pairs
+	"""
+
+	# FIX
 	def cpi_adjust_frame(self, frame_, wage_column, wage_year_column, year=date.today().year):
 		"""
 		This adjusts all wages to the current year's wages by default (though it will do whatever you tell it to!)
@@ -338,25 +355,6 @@ class BLS_API:
 		adjusted_frame['adjustment_factor'] = current_year_cpi/cpi
 		adjusted_frame['adjusted_wage'] = adjusted_frame['adjustment_factor'] * adjusted_frame[wage_column]
 		return adjusted_frame
-
-	def make_employment_rate_frame(self, employment_series, laborforce_series):
-		employment_rate_series = employment_series.merge(laborforce_series, on=["state_code", "month_year"], suffixes=("_emp","_labor"))
-		employment_rate_series['employment_rate'] = employment_rate_series['value_emp'] / employment_rate_series['value_labor']
-		final = employment_rate_series[['state_code','month_year','employment_rate']]
-		return(final)
-
-class Calculations:
-	"""
-	Functions that take in dataframes produced by the BLS API and calculate statistics that will feed into ROI metrics.
-
-	Methods
-	-------
-	employment_change(bls_employment_table, start_month, start_year, end_month, end_year)
-		Returns the change in employment in between two month/year pairs
-
-	wage_change(bls_wage_table, start_month, start_year, end_month, end_year)
-		Returns the change in employment in between two month/year pairs
-	"""
 
 	def employment_change(bls_employment_table, bls_labor_force_table, state_code, start_month, end_month):
 		"""
