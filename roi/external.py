@@ -49,7 +49,7 @@ class Parameters:
 
 class BLS_API:
 	"""
-	Functions needed for collecting data from the Bureau of Labor Statistics API and conducting some operations on it.
+	Functions needed for collecting data from the Bureau of Labor Statistics API.
 
 	The BLS API takes as a main argument Series IDs describing the type and format of data to be retrieved.
 	The API takes start and and years as additional arguments, but geographic specifications, for example,
@@ -311,134 +311,197 @@ class BLS_API:
 		final = employment_rate_series[['state_code','month_year','employment_rate']]
 		return(final)
 
-class Calculations:
-	"""
-	Functions that take in dataframes produced by the BLS API and calculate statistics that will feed into ROI metrics.
 
-	Methods
-	-------
-	employment_change(bls_employment_table, start_month, start_year, end_month, end_year)
-		Returns the change in employment in between two month/year pairs
+class Census:
 
-	wage_change(bls_wage_table, start_month, start_year, end_month, end_year)
-		Returns the change in employment in between two month/year pairs
-	"""
-
-	# FIX
-	def cpi_adjust_frame(self, frame_, wage_column, wage_year_column, year=date.today().year):
+	def get_batch_geocode(dataframe):
 		"""
-		This adjusts all wages to the current year's wages by default (though it will do whatever you tell it to!)
-		It takes a frame and returns the original frame with the adjusted wages and the adjustment factors used.
+		Fetches a 12-digit FIPS code from the Census Geocoder API.
+
+		The Geocoder returns a JSON object containing all relevant geographic data, such as latitude and longitude.
+		But this function simply takes the components necessary to create a GEOID at the block group level.
+		Block groups roughly correspond to neighborhoods.
+
+		We use the JSON response here to form GEOID as follows with COMPONENTS[LENGTH]: STATE[2] + COUNTY[3] + TRACT[6] + BLOCK GROUP[1] = GEOID[12]
 
 		Parameters:
 		-----------
-		frame_ : Pandas DataFrame
-			A DataFrame containing a wage column and a year column
+		address : str
+			Street address e.g. "42 Zaphod Beeblebrox Avenue"
 
-		wage_column : str
-			Name of the column containing the wage amounts to be adjusted. This column should be numeric; otherwise an error will arise.
+		city : str
+			City name e.g. "Prefectville"
 
-		wage_year_column: str
-			Name of the column containing the years associated with each wage. This column should be numeric; otherwise an error will arise.
-
-		year : int
-			The year to which all wages are to be adjusted, as in 1999 dollars or 2020 dollars, etc. Present year by default assuming you computer clock is correct.
-
-		Returns:
-		-------
-		Original dataframe with "adjusted_wage" columns and "adjustment_factor" columns (self-explanatory).
-
-		"""
-		adjustment_frame = self.get_cpi_adjustment_range(year - 20, year)
-		current_year_cpi = adjustment_frame.loc[adjustment_frame.year == year, 'cpi'].iat[0]
-		adjusted_frame = frame_.merge(adjustment_frame, left_on=wage_year_column, right_on='year', how='left')
-		adjusted_frame['adjustment_factor'] = current_year_cpi/cpi
-		adjusted_frame['adjusted_wage'] = adjusted_frame['adjustment_factor'] * adjusted_frame[wage_column]
-		return adjusted_frame
-
-	def employment_change(bls_employment_table, bls_labor_force_table, state_code, start_month, end_month):
-		"""
-		This function takes year/month YYYY-MM as datetime arguments to avoid false precision.
-		It fetches the associated figures from the BLS statistics provided as a function argument for
-		the first of the month provided.
-
-		BLS APIs return monthly data
-
-		Parameters:
-		-----------
-		bls_employment_table : Pandas DataFrame
-			Employment numbers for a given state over an arbitrary range of dates
-
-		bls_labor_force_table : Pandas DataFrame
-			Labor force numbers for a given state over an arbitrary range of dates
-
-		start_month : str
-			Format: "YYYY-MM"
-			Start year and month of the period over which we want to identify % employment change
-
-		end_month : str
-			Format: "YYYY-MM"
-			End year and month of the period over which we want to identify % employment change
+		state_code : str
+			Two-digit state postal code e.g.: "CA" or "NY"
 
 		Returns
 		-------
-		A single number indicating the employment change over the given period
+		A twelve-digit code -- as a string -- denoting a neighborhood-sized region in the United States.
 		"""
 
-		bls_employment_table = bls_employment_table[bls_employment_table['state_code'] == state_code]
-		bls_labor_force_table = bls_labor_force_table[bls_labor_force_table['state_code'] == state_code]
+		dataframe.to_csv("temp_addresses_frame.csv", index=False, header=None)
+		files = {'addressFile': open('temp_addresses_frame.csv', 'rb')}
 
-		# configure dtype of input
-		start_month_year = pd.to_datetime(start_month).strftime("%Y-%m")
-		end_month_year = pd.to_datetime(end_month).strftime("%Y-%m")
+		url = "https://geocoding.geo.census.gov/geocoder/geographies/addressbatch?benchmark=9&vintage=Census2010_Census2010"
 
-		# get employment figures
-		start_employment = bls_employment_table.loc[bls_employment_table.month_year == start_month_year, 'value'].astype(int).iat[0]
-		end_employment = bls_employment_table.loc[bls_employment_table.month_year == end_month_year, 'value'].astype(int).iat[0]
+		# first fetch response
+		try:
+			response = requests.post(url, files=files)
+			response_content = response.content
+		except Exception as e:
+			print("EXCEPTION: Couldn't get geocoding API response for FILE")
 
-		# get labor force figures
-		start_labor_force = bls_labor_force_table.loc[bls_labor_force_table.month_year == start_month_year, 'value'].astype(int).iat[0]
-		end_labor_force = bls_labor_force_table.loc[bls_labor_force_table.month_year == end_month_year, 'value'].astype(int).iat[0]
+		# turn response into dataframe
+		try:
+			bytes_to_csv = StringIO(str(response_content,'utf-8'))
+			df = pd.read_csv(bytes_to_csv, names=['id','provided_address','match','matchtype','clean_address','latlon','tiger_line_id','side_of_street','statefip','county','tract','block'], dtype=str).fillna("")
+		except Exception as e:
+			print("EXCEPTION: Failed parsing Census batch geocoder response into CSV: {}".format(e))
 
-		# calculation
-		employment_change = float((end_employment / end_labor_force) - (start_employment / start_labor_force))
+		# combine variables to get a geocode
+		df['block_group'] = df['block'].astype(str).str.slice(start = 0, stop = 1)
+		df['geocode'] = df['statefip'] + df['county'] + df['tract'] + df['block_group']
 
-		return employment_change
+		# make id string for merging
+		df['id'] = df['id'].astype(int)
 
-	def wage_change(bls_wage_table, state_code, start_month, end_month):
+		# where did we have blank responses?
+		null_geocode = (df['geocode'] != "")
+		successful_responses = df[null_geocode]
+
+		# merge with original - dump non-geocode variables for now!
+		response_to_merge = successful_responses[['id','geocode']]
+		to_return = dataframe.merge(response_to_merge, how='left', on='id', left_index=True).set_index(dataframe.index).fillna("") # set index is important!
+
+		succesfully_merged = round(100*null_geocode.mean(),2)
+		exact_matches = round(100*(successful_responses['matchtype'] == "Exact").mean(),2)
+
+		print("Successfully geocoded {}% of {} passed addresses.".format(succesfully_merged, len(df)))
+		print("Of successfully matched addresses, {}% were exact matches".format(exact_matches))
+
+		return(to_return['geocode'])
+
+	def get_geocode_for_address(address, city, state_code):
 		"""
+		Fetches a 12-digit FIPS code from the Census Geocoder API.
+
+		The Geocoder returns a JSON object containing all relevant geographic data, such as latitude and longitude.
+		But this function simply takes the components necessary to create a GEOID at the block group level.
+		Block groups roughly correspond to neighborhoods.
+
+		We use the JSON response here to form GEOID as follows with COMPONENTS[LENGTH]: STATE[2] + COUNTY[3] + TRACT[6] + BLOCK GROUP[1] = GEOID[12]
 
 		Parameters:
 		-----------
-		bls_wage_table : Pandas DataFrame
-			Wage numbers for a given state over an arbitrary range of dates. Unadjusted!
+		address : str
+			Street address e.g. "42 Zaphod Beeblebrox Avenue"
 
-		start_month : str
-			Format: "YYYY-MM"
-			Start year and month of the period over which we want to identify $ wage change
+		city : str
+			City name e.g. "Prefectville"
 
-		end_month : str
-			Format: "YYYY-MM"
-			End year and month of the period over which we want to identify $ wage change
+		state_code : str
+			Two-digit state postal code e.g.: "CA" or "NY"
 
 		Returns
 		-------
-		A single number indicating the wage change over the given period
+		A twelve-digit code -- as a string -- denoting a neighborhood-sized region in the United States.
 		"""
 
-		bls_wage_table = bls_wage_table[bls_wage_table['state_code'] == state_code]
+		url = "https://geocoding.geo.census.gov/geocoder/geographies/address?street={}&city={}&state={}&benchmark=9&format=json&vintage=Census2010_Census2010".format(address, city, state_code)
 
-		bls_wage_table['bls_annual_wages'] = bls_wage_table['value'] * 52 # weekly wage to annual
+		# first fetch response
+		try:
+			response = requests.get(url)
+			response_content = response.content
+			response_parsed = json.loads(response_content)
+		except Exception as e:
+			print("EXCEPTION: Couldn't get geocoding API response for {}:\n 	{}".format(address, e))
 
-		# configure dtype of input
-		start_month_year = pd.to_datetime(start_month).strftime("%Y-%m")
-		end_month_year = pd.to_datetime(end_month).strftime("%Y-%m")
+		# access necessary elements
+		try:
+			first_address_match = response_parsed['result']['addressMatches'][0]
+			first_address_match_geographies = first_address_match['geographies']
+			tract_geoid = str(first_address_match_geographies['Census Tracts'][0]['GEOID'])
+			block_group = str(first_address_match_geographies['Census Blocks'][0]['BLKGRP'])
+			return "{}{}".format(tract_geoid, block_group)
+		except Exception as e:
+			#print(response_parsed)
+			print("EXCEPTION: Couldn't access vital response elements in geocode API response:\n 	{}".format(e))
+			return ""
 
-		# get wage figures
-		start_wage = bls_wage_table.loc[bls_wage_table.month_year == start_month_year, 'value'].astype(float).iat[0]
-		end_wage = bls_wage_table.loc[bls_wage_table.month_year == end_month_year, 'value'].astype(float).iat[0]
 
-		# calculation
-		wage_change = end_wage - start_wage
+class ADI (object):
+	"""
+	Methods related to the Area Deprivation Statistics
+	Data can be downloaded from: https://www.neighborhoodatlas.medicine.wisc.edu/
 
-		return wage_change
+	This object, at init, simply reads in the raw textfile of ADI indices at the block group level and forms it into quintiles.
+
+	This currently uses the ADI based on the 2011-2015 ACS 5-year estimates.
+
+	Block groups containing less than 100 persons, 30 housing units, or >33% of pop living in group quarters are suppressed
+	with the value "PH". ADI indices are coerced to numeric, so suppressed indices are coerced to NaN.
+
+	Finally, indices are bucketed into quintiles. IMPORTANT: Lower quintiles are HIGHER-SES. Higher quintiles are more deprived.
+	"""
+	def __init__(self):
+		adi_location = settings.File_Locations.adi_location
+		adi = pd.read_csv(adi_location, sep=',', dtype="str") # read in ADI by block group from text file
+		adi['adi_natrank_numeric'] = pd.to_numeric(adi['adi_natrank'], errors='coerce')
+		adi['adi_quintile'] = pd.qcut(adi['adi_natrank_numeric'], [0, 0.2, 0.4, 0.6, 0.8, 1], labels=["0-20","20-40","40-60","60-80","80-100"])
+		self.adi_frame = adi
+		return None
+
+	def get_quintile_for_geocode(self, fips_geocode):
+		"""
+		Parameters:
+		-----------
+		fips_geocode : str
+			Twelve-digit FIPS code
+
+		adi_frame : Pandas DataFrame
+			ADI Dataframe produced above in ADI.get_adi_frame()
+
+		Returns
+		-------
+		A single string value such as "0-20" denoting the deprivation percentile of the provided block group.
+		"""
+		slice_ = self.adi_frame.loc[self.adi_frame.fips == fips_geocode, 'adi_quintile'].iat[0]
+		return(slice_)
+
+	def get_quintile_for_geocodes_frame(self, dataframe, geocode_column_name):
+		"""
+		Parameters:
+		-----------
+		dataframe : Pandas Dataframe
+			Dataframe with a column containing geocode
+
+		geocode_column_name : str
+			Name of column in dataframe containing geocodes
+
+		Returns
+		-------
+		The original dataframe with an "adi_quintile" column containing the ADI quintile.
+
+		Notes
+		-------
+		Geocodes often contain leading zeroes, so be sure that the input column is correctly formatted! It should be an object or str.
+		"""
+
+		adi_ranks_only = self.adi_frame[['fips', 'adi_quintile']]
+		geocodes_merged = dataframe.merge(adi_ranks_only, left_on=geocode_column_name, right_on='fips', how='left', indicator=True)
+
+		# count up the merges
+		count_merged = np.sum(geocodes_merged._merge == "both")
+		count_unmerged = len(dataframe) - count_merged
+		print("Geocode merge: Merged {} of {} observations in input dataframe ({}%)".format(str(count_merged), str(count_unmerged), str(round(100*count_merged/len(dataframe), 2))))
+
+		# a little bit of error handling
+		if (count_merged == 0):
+			print ("Merged 0 of {} observations in input dataframe! Make sure that geocodes have been read in the correct format and watch out for the removal of leading zeroes!".format(str(len(dataframe))))
+
+		del geocodes_merged['_merge']
+		del geocodes_merged['fips']
+
+		return(geocodes_merged['adi_quintile'].to_numpy())

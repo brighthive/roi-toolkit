@@ -117,101 +117,12 @@ class Earnings_Premium:
 
 		return(counterfactual_current_wage)
 
-
 	# eliminate this???
-	def Group_Earnings_Premium(self, grouping_variable):
+	def group_average_premiums(self, grouping_variable):
 		data = self.data
 		data['earnings_premium'] = self.full_premium
 		summaries = utilities.multiple_describe(data, grouping_variable, 'earnings_premium')
 		# here - do not report if less than default number!
 		return(summaries)
-
-class Macro_Changes():
-	def __init__(self):
-		return(None)
-
-
-class Comparison:
-	def __init__(self):
-		self.base_year = date.today().year - 1
-
-		# Read in data and params that are packaged with the module
-		self.all_mean_wages = Local_Data.all_mean_wages()
-		self.hs_grads_mean_wages = Local_Data.hs_grads_mean_wages() # mean wages for high school graduates in every state
-
-		self.cpi_adjustments = Local_Data.cpi_adjustments() # CPI adjustments from the Bureau of Labor Statistics
-
-	def wage_change_across_years(self, start_year, end_year, age_group_at_start, statefip):
-		"""
-		Calculate mean wage change across years for individuals in a given state and age group.
-
-		Parameters:
-		-----------
-		start_year : int
-			CPS education recode code for the lower-bound education level
-
-		end_year : int
-			CPS education recode code for the upper-bound education level
-
-		age_group_at_start : str
-			One of ['18 and under','19-25','26-34','35-54','55-64','65+']. These are divvied up in the CPS data at init of the CPS_Ops object.
-
-		statefip : str
-			State FIPS code, e.g. "08"
-
-		Returns
-		-------
-		A single number indicating the mean wage across the dataset for this group of people.
-		"""
-
-		# Validation
-		if age_group_at_start not in settings.General.CPS_Age_Groups:
-			raise ValueError("Invalid age group. Argument age_group_at_start must be in ['18 and under','19-25','26-34','35-54','55-64','65+']")
-		else:
-			pass
-
-		wage_start = self.all_mean_wages.loc[(self.all_mean_wages['YEAR'] == start_year) & (self.all_mean_wages['age_group'] == age_group_at_start) & (self.all_mean_wages['STATEFIP'] == statefip), 'mean_INCWAGE'].iat[0]
-		wage_end = self.all_mean_wages.loc[(self.all_mean_wages['YEAR'] == end_year) & (self.all_mean_wages['age_group'] == age_group_at_start) & (self.all_mean_wages['STATEFIP'] == statefip), 'mean_INCWAGE'].iat[0]
-		wage_change = wage_end - wage_start
-		return(wage_change)
-
-	def frames_wage_change_across_years(self, ind_frame, start_year_column, end_year_column, age_group_start_column, statefip_column, hsgrads_only = True):
-		"""
-		Given a dataframe with individual microdata, add a new column describing the change in state-level wages
-		for people in their age group across the provided time frame (e.g. time spent in educational/training program).
-
-		Parameters:
-		-----------
-		ind_frame : Pandas DataFrame
-			Dataframe containing microdata for individuals
-
-		start_year_column : str
-			Name of column containing individuals' years of entry into educational programs
-
-		end_year_column : str
-			Name of column containing individuals' years of exit from educational programs
-
-		age_group_start_column : str
-			Name of column containing age groups.
-			These are in ['18 and under','19-25','26-34','35-54','55-64','65+'].
-
-		statefip_column : str
-			Name of column containing state FIPS codes
-
-		hsgrads_only : boolean
-			If true, we correct for macro trends using only data from high school graduates (max education)
-
-		Returns
-		-------
-		A dataframe containing a new column ("wage_change") which expresses the difference between pre- and post-program earnings corrected for trend.
-		"""
-		if (hsgrads_only == False):
-			cps_frame = self.all_mean_wages
-		else:
-			cps_frame = self.hs_grads_mean_wages
-		merged_start = ind_frame.merge(cps_frame, left_on=[start_year_column, age_group_start_column, statefip_column], right_on=['YEAR','age_group','STATEFIP'], how='left')
-		merged_both = merged_start.merge(cps_frame, left_on=[end_year_column, age_group_start_column, statefip_column], right_on=['YEAR','age_group','STATEFIP'], how='left', suffixes=('_start','_end'))
-		merged_both['wage_change'] = merged_both['mean_INCWAGE_end'] - merged_both['mean_INCWAGE_start']
-		return(merged_both['wage_change'])
 
 
