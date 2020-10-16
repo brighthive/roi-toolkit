@@ -2,17 +2,19 @@ from roi import external
 from datetime import date
 from roi import settings, utilities
 import pandas as pd
+import warnings
 
-class CPS:
+class CPS_Ops:
 	def __init__(self):
 		return(None)
 
-class BLS:
+class BLS_Ops:
 	def __init__(self):
-		bls = BLS_API()
+		bls = external.BLS_API(query=False)
+		self.cpi_adjustments = bls.cpi_adjustment_series
 
-	def adjust_to_current_dollars(frame_, year_column_name, value_column_name, cpi_adjustments):
-		max_year_row = cpi_adjustments.loc[cpi_adjustments['year'] == cpi_adjustments['year'].max()].iloc[0] # get latest year of CPI data
+	def adjust_to_current_dollars(self, frame_, year_column_name, value_column_name):
+		max_year_row = self.cpi_adjustments.loc[self.cpi_adjustments['year'] == self.cpi_adjustments['year'].max()].iloc[0] # get latest year of CPI data
 		max_year = max_year_row['year']
 		max_cpi_index = max_year_row['cpi']
 
@@ -29,7 +31,7 @@ class BLS:
 			warnings.warn("Year column {} contains {} NA values ({}%) of total.".format(value_column_name, value_nas, round(100*year_nas/len(frame_),2)))
 
 		# Merge provided frame with CPI data
-		frame_merged = frame_.merge(cpi_adjustments, left_on=year_column_name, right_on='year', how='left', indicator=True)
+		frame_merged = frame_.merge(self.cpi_adjustments, left_on=year_column_name, right_on='year', how='left', indicator=True)
 
 		# Report years that didn't merge
 		unmerged_from_frame = frame_merged[frame_merged['_merge'] == "left_only"]
