@@ -35,7 +35,7 @@ class Validator:
 	@staticmethod
 	def readability_check(series):
 		if (is_numeric_dtype(series)):
-			warnings.warn("Column '{}' is numeric. Are you sure you want to calculate wage statistics across this variable? For human readability, it is advisable to use unique string or factor variables.".format(series.name))
+			warnings.warn("Column '{}' is numeric. Are you sure you want to calculate statistics across this variable? For human readability, it is advisable to use unique string or factor variables.".format(series.name))
 		return(None)
 
 	@staticmethod

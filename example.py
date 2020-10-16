@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
-from roi import earnings, types, external, equity, utilities, completion, employment
+from roi import earnings, types, external, equity, utilities, completion, employment, macro
+from roi.utilities import Local_Data
 from datetime import date
 import sys
 from matplotlib import pyplot as plt
@@ -122,18 +123,6 @@ if __name__ == "__main__":
 	print(completion.time_to_completion)
 	'''
 
-	# fetch employment change 
-	#bls_api = external.BLS_API(query=False)
-	#employment = bls_api.bls_employment_series
-	#laborforce = bls_api.bls_laborforce_series
-	#change = external.Calculations.employment_change(employment, laborforce, "08", "2012-07","2018-10")
-
-	#bls_api = external.BLS_API()
-	#cpi_range = bls_api.get_cpi_adjustment_range(2002, 2005) # get annual CPI-U index for all years in intervening range
-	#cpi_range_oneyear = bls_api.get_cpi_adjustment(1999, 2020) # get CPI-U adjustment factor between the two years provided
-	#print(cpi_range_oneyear)
-	#exit()
-
 	# Employment
 	#test_microdata['start_month_year'] = test_microdata['program_start'].astype(str) + '-' + test_microdata['start_month'].astype(str).str.pad(2, fillchar='0')
 	#test_microdata['end_month_year'] = test_microdata['program_end'].astype(str) + '-' + test_microdata['end_month'].astype(str).str.pad(2, fillchar='0')
@@ -157,19 +146,28 @@ if __name__ == "__main__":
 
 	# For a given dataframe, create a new column for the baseline wage change across years
 
+	#test_microdata['start_year'] = 2011
+	#test_microdata['end_year'] = 2015
+	#test_microdata['statefip'] = utilities.check_state_code_series(test_microdata['state'])
+	#prem = earnings.Earnings_Premium(test_microdata, 'statefip', 'education_level', 'earnings_start', 'earnings_end', 'start_year', 'end_year', 'age')
+	#test_microdata['predicted'] = prem.predicted_wage
+	#test_microdata['raw_change'] = test_microdata['earnings_end'] - test_microdata['earnings_start']
+	#test_microdata['premium'] = prem.full_premium
+	#premiums_by_race = prem.group_average_premiums(['program','race'])
+	#print(premiums_by_race)
 
-	test_microdata['start_year'] = 2011
-	test_microdata['end_year'] = 2015
-	test_microdata['statefip'] = utilities.check_state_code_series(test_microdata['state'])
-	prem = earnings.Earnings_Premium(test_microdata, 'statefip', 'education_level', 'earnings_start', 'earnings_end', 'start_year', 'end_year', 'age')
-	test_microdata['predicted'] = prem.predicted_wage
-	test_microdata['raw_change'] = test_microdata['earnings_end'] - test_microdata['earnings_start']
-	test_microdata['premium'] = prem.full_premium
-	print(test_microdata)
+	# fetch employment change 
+	#bls_api = external.BLS_API(query=False)
+	#employment = bls_api.bls_employment_series
+	#laborforce = bls_api.bls_laborforce_series
+	#change = macro.Calculations.employment_change(employment, laborforce, "08", "2012-07","2018-10")
+	#print(change)
 
-	#prem = earnings.Earnings_Premium().mincer_predicted_wage(state='08', prior_education=test_microdata['education_level'], current_age=test_microdata['age'], starting_wage=test_microdata['earnings_start'], years_passed=test_microdata['years_in_program'])
-	# test_microdata['group_change'] = prem.frames_wage_change_across_years(ind_frame=test_microdata, start_year_column='program_start', end_year_column='program_end', age_group_start_column='age_group_at_start', statefip_column='state', hsgrads_only = True)
-	# print(test_microdata)	
+	#bls_api = external.BLS_API()
+	#cpi_range = bls_api.get_cpi_adjustment_range(2002, 2005) # get annual CPI-U index for all years in intervening range
+	#cpi_range_oneyear = bls_api.get_cpi_adjustment(1999, 2020) # get CPI-U adjustment factor between the two years provided
+	#print(cpi_range_oneyear)
+	#exit()
 
 
 
