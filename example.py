@@ -146,7 +146,7 @@ if __name__ == "__main__":
 
 	# For a given dataframe, create a new column for the baseline wage change across years
 
-	#test_microdata['start_year'] = 2011
+	test_microdata['start_year'] = 2011
 	#test_microdata['end_year'] = 2015
 	#test_microdata['statefip'] = utilities.check_state_code_series(test_microdata['state'])
 	#prem = earnings.Earnings_Premium(test_microdata, 'statefip', 'education_level', 'earnings_start', 'earnings_end', 'start_year', 'end_year', 'age')
@@ -169,6 +169,10 @@ if __name__ == "__main__":
 	#print(cpi_range_oneyear)
 	#exit()
 
+	# adjust starting wages
+	#ops = macro.BLS_Ops()
+	#test_microdata['adjusted_start_wage'] = ops.adjust_to_current_dollars(test_microdata, 'start_year', 'earnings_start')
+	#print(test_microdata)
 
 
 
