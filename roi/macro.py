@@ -4,14 +4,13 @@ from roi import settings, utilities
 import pandas as pd
 import warnings
 
-class CPS_Ops:
-	def __init__(self):
-		return(None)
-
 class BLS_Ops:
 	def __init__(self):
-		bls = external.BLS_API(query=False)
-		self.cpi_adjustments = bls.cpi_adjustment_series
+		self.bls = external.BLS_API(query=False)
+		self.cpi_adjustments = self.bls.cpi_adjustment_series
+		self.employment_series = self.bls.bls_employment_series
+		self.laborforce_series = self.bls.bls_laborforce_series
+		self.wage_series = self.bls.bls_wage_series
 
 	def adjust_to_current_dollars(self, frame_, year_column_name, value_column_name):
 		max_year_row = self.cpi_adjustments.loc[self.cpi_adjustments['year'] == self.cpi_adjustments['year'].max()].iloc[0] # get latest year of CPI data
@@ -46,58 +45,7 @@ class BLS_Ops:
 		adjusted_column = frame_merged[value_column_name]/frame_merged['cpi'] * max_cpi_index
 		return(adjusted_column)
 
-
-class ADI:
-	def __init__(self):
-		return(None)
-
-
-class Calculations:
-	"""
-	Functions that take in dataframes produced by the BLS API and calculate statistics that will feed into ROI metrics.
-
-	Methods
-	-------
-	employment_change(bls_employment_table, start_month, start_year, end_month, end_year)
-		Returns the change in employment in between two month/year pairs
-
-	wage_change(bls_wage_table, start_month, start_year, end_month, end_year)
-		Returns the change in employment in between two month/year pairs
-	"""
-
-	# FIX
-	def cpi_adjust_frame(self, frame_, wage_column, wage_year_column, year=date.today().year):
-		"""
-		This adjusts all wages to the current year's wages by default (though it will do whatever you tell it to!)
-		It takes a frame and returns the original frame with the adjusted wages and the adjustment factors used.
-
-		Parameters:
-		-----------
-		frame_ : Pandas DataFrame
-			A DataFrame containing a wage column and a year column
-
-		wage_column : str
-			Name of the column containing the wage amounts to be adjusted. This column should be numeric; otherwise an error will arise.
-
-		wage_year_column: str
-			Name of the column containing the years associated with each wage. This column should be numeric; otherwise an error will arise.
-
-		year : int
-			The year to which all wages are to be adjusted, as in 1999 dollars or 2020 dollars, etc. Present year by default assuming you computer clock is correct.
-
-		Returns:
-		-------
-		Original dataframe with "adjusted_wage" columns and "adjustment_factor" columns (self-explanatory).
-
-		"""
-		adjustment_frame = self.get_cpi_adjustment_range(year - 20, year)
-		current_year_cpi = adjustment_frame.loc[adjustment_frame.year == year, 'cpi'].iat[0]
-		adjusted_frame = frame_.merge(adjustment_frame, left_on=wage_year_column, right_on='year', how='left')
-		adjusted_frame['adjustment_factor'] = current_year_cpi/cpi
-		adjusted_frame['adjusted_wage'] = adjusted_frame['adjustment_factor'] * adjusted_frame[wage_column]
-		return adjusted_frame
-
-	def employment_change(bls_employment_table, bls_labor_force_table, state_code, start_month, end_month):
+	def employment_change(self, state_code, start_month, end_month):
 		"""
 		This function takes year/month YYYY-MM as datetime arguments to avoid false precision.
 		It fetches the associated figures from the BLS statistics provided as a function argument for
@@ -107,86 +55,64 @@ class Calculations:
 
 		Parameters:
 		-----------
-		bls_employment_table : Pandas DataFrame
-			Employment numbers for a given state over an arbitrary range of dates
 
-		bls_labor_force_table : Pandas DataFrame
-			Labor force numbers for a given state over an arbitrary range of dates
-
-		start_month : str
-			Format: "YYYY-MM"
-			Start year and month of the period over which we want to identify % employment change
-
-		end_month : str
-			Format: "YYYY-MM"
-			End year and month of the period over which we want to identify % employment change
 
 		Returns
 		-------
 		A single number indicating the employment change over the given period
 		"""
 
-		bls_employment_table = bls_employment_table[bls_employment_table['state_code'] == state_code]
-		bls_labor_force_table = bls_labor_force_table[bls_labor_force_table['state_code'] == state_code]
+		temp_frame = pd.DataFrame({'start_month':start_month,'end_month':end_month,'state_code':state_code})
 
-		# configure dtype of input
-		start_month_year = pd.to_datetime(start_month).strftime("%Y-%m")
-		end_month_year = pd.to_datetime(end_month).strftime("%Y-%m")
+		# employment merges
+		employment_start_merged = temp_frame.merge(self.employment_series, left_on=['start_month','state_code'], right_on=['month_year','state_code'], how='left')['value']
+		employment_end_merged = temp_frame.merge(self.employment_series, left_on=['end_month','state_code'], right_on=['month_year','state_code'], how='left')['value']
 
-		# get employment figures
-		start_employment = bls_employment_table.loc[bls_employment_table.month_year == start_month_year, 'value'].astype(int).iat[0]
-		end_employment = bls_employment_table.loc[bls_employment_table.month_year == end_month_year, 'value'].astype(int).iat[0]
+		# laborforce merges
+		lf_start_merged = temp_frame.merge(self.laborforce_series, left_on=['start_month','state_code'], right_on=['month_year','state_code'], how='left')['value']
+		lf_end_merged = temp_frame.merge(self.laborforce_series, left_on=['end_month','state_code'], right_on=['month_year','state_code'], how='left')['value']
 
-		# get labor force figures
-		start_labor_force = bls_labor_force_table.loc[bls_labor_force_table.month_year == start_month_year, 'value'].astype(int).iat[0]
-		end_labor_force = bls_labor_force_table.loc[bls_labor_force_table.month_year == end_month_year, 'value'].astype(int).iat[0]
+		percent_employed_change = (employment_end_merged/lf_end_merged) - (employment_start_merged/lf_start_merged)
 
-		# calculation
-		employment_change = float((end_employment / end_labor_force) - (start_employment / start_labor_force))
+		return(percent_employed_change)
 
-		return employment_change
-
-	def wage_change(bls_wage_table, state_code, start_month, end_month):
+	def wage_change(self, state_code, start_month, end_month, convert=False):
 		"""
 
 		Parameters:
 		-----------
-		bls_wage_table : Pandas DataFrame
-			Wage numbers for a given state over an arbitrary range of dates. Unadjusted!
 
-		start_month : str
-			Format: "YYYY-MM"
-			Start year and month of the period over which we want to identify $ wage change
-
-		end_month : str
-			Format: "YYYY-MM"
-			End year and month of the period over which we want to identify $ wage change
 
 		Returns
 		-------
 		A single number indicating the wage change over the given period
 		"""
 
-		bls_wage_table = bls_wage_table[bls_wage_table['state_code'] == state_code]
+		temp_frame = pd.DataFrame({'start_month':start_month,'end_month':end_month,'state_code':state_code})
 
-		bls_wage_table['bls_annual_wages'] = bls_wage_table['value'] * 52 # weekly wage to annual
+		# employment merges
+		temp_frame['wage_start'] = temp_frame.merge(self.wage_series, left_on=['start_month','state_code'], right_on=['month_year','state_code'], how='left')['value']
+		temp_frame['wage_end'] = temp_frame.merge(self.wage_series, left_on=['end_month','state_code'], right_on=['month_year','state_code'], how='left')['value']
 
-		# configure dtype of input
-		start_month_year = pd.to_datetime(start_month).strftime("%Y-%m")
-		end_month_year = pd.to_datetime(end_month).strftime("%Y-%m")
+		if convert == True:
+			temp_frame['start_year'] = temp_frame['start_month'].str.split('-',expand=True)[0].astype(int)
+			temp_frame['end_year'] = temp_frame['end_month'].str.split('-',expand=True)[0].astype(int)
+			wage_start = self.adjust_to_current_dollars(temp_frame, 'start_year', 'wage_start')
+			wage_end = self.adjust_to_current_dollars(temp_frame, 'end_year', 'wage_end')
+		else:
+			wage_start = temp_frame['wage_start']
+			wage_end = temp_frame['wage_end']
 
-		# get wage figures
-		start_wage = bls_wage_table.loc[bls_wage_table.month_year == start_month_year, 'value'].astype(float).iat[0]
-		end_wage = bls_wage_table.loc[bls_wage_table.month_year == end_month_year, 'value'].astype(float).iat[0]
-
-		# calculation
-		wage_change = end_wage - start_wage
-
-		return wage_change
-
+		wage_change = (wage_end - wage_start)*52 # convert to annual wage
+		return(wage_change)
 
 
-class Macro_Comparison:
+class ADI:
+	def __init__(self):
+		return(None)
+
+
+class CPS_Ops:
 	def __init__(self):
 		self.base_year = date.today().year - 1
 
