@@ -32,8 +32,6 @@ if __name__ == "__main__":
 	test_microdata['age_at_start'] = test_microdata['age'] - (date.today().year - test_microdata['program_start'])
 	test_microdata['age_group_at_start'] = utilities.age_to_group(test_microdata['age_at_start'])
 
-	print(test_microdata)
-
 	# Create an age group column. The provided data has an age column denoting CURRENT age... but we want age at start
 
 	#print(test_microdata.head())
@@ -146,7 +144,7 @@ if __name__ == "__main__":
 
 	# For a given dataframe, create a new column for the baseline wage change across years
 
-	test_microdata['start_year'] = 2011
+	#test_microdata['start_year'] = 2011
 	#test_microdata['end_year'] = 2015
 	#test_microdata['statefip'] = utilities.check_state_code_series(test_microdata['state'])
 	#prem = earnings.Earnings_Premium(test_microdata, 'statefip', 'education_level', 'earnings_start', 'earnings_end', 'start_year', 'end_year', 'age')
@@ -173,6 +171,17 @@ if __name__ == "__main__":
 	#ops = macro.BLS_Ops()
 	#test_microdata['adjusted_start_wage'] = ops.adjust_to_current_dollars(test_microdata, 'start_year', 'earnings_start')
 	#print(test_microdata)
+
+	# employment change in one state over time
+	test_microdata['end_month'] = pd.to_datetime(dict(year='2012', month=test_microdata['start_month'], day=1)).dt.strftime('%Y-%m')
+	test_microdata['start_month'] = pd.to_datetime(dict(year='2011', month=test_microdata['start_month'], day=1)).dt.strftime('%Y-%m')
+	test_microdata['statefip'] = utilities.State_To_FIPS_series(test_microdata['State'])
+
+	bls = macro.BLS_Ops()
+	test_microdata['employment_change'] = bls.employment_change(test_microdata['statefip'], test_microdata['start_month'], test_microdata['end_month'])
+	test_microdata['wage_change'] = bls.wage_change(test_microdata['statefip'], test_microdata['start_month'], test_microdata['end_month'], convert=True)
+
+	print(test_microdata)
 
 
 

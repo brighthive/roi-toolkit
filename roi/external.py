@@ -431,7 +431,7 @@ class Census:
 			return ""
 
 
-class ADI (object):
+class ADI(object):
 	"""
 	Methods related to the Area Deprivation Statistics
 	Data can be downloaded from: https://www.neighborhoodatlas.medicine.wisc.edu/
