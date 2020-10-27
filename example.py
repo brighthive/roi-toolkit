@@ -7,23 +7,6 @@ import sys
 from matplotlib import pyplot as plt
 #print(sys.modules.keys())
 
-
-class Earnings_Premium:
-	"""
-	Methods for calculating the earnings premium and variations thereof.
-	The earnings premium is interpretable as the expected increase in earnings an incoming student can expect at various intervals at the graduation from a program.
-	It's calculated by taking the difference between pre- and post-program earnings and correcting for trend.
-	Trend is calculated using CPS data for the change in average earned income for individuals in (a) a given age group with (b) a given qualification
-	"""
-	def calculate(dataframe, earnings_before_column, earnings_after_column, start_year_column, end_year_column, age_at_start, statefip):
-		cps = earnings.CPS_Ops()
-		dataframe['age_group_at_start'] = pd.cut(dataframe[age_at_start], bins=[0,18,25,34,54,64,150], right=True, labels=['18 and under','19-25','26-34','35-54','55-64','65+']).astype(str)
-		dataframe['raw_earnings_change'] = dataframe[earnings_after_column] - dataframe[earnings_before_column]
-		dataframe['years_in_program'] = dataframe[end_year_column] - dataframe[start_year_column]
-		wage_change = cps.frames_wage_change_across_years(dataframe, start_year_column, end_year_column, 'age_group_at_start', statefip)
-		wage_change['earnings_premium'] = wage_change['raw_earnings_change'] - wage_change['wage_change']
-		return(wage_change)
-
 if __name__ == "__main__":
 
 	programs_data = pd.read_csv("testing/testing-data/programs.csv")

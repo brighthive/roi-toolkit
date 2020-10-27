@@ -47,7 +47,6 @@ class Validator:
 		return(None)
 
 
-
 class Programs(Validator):
 	def __init__(self, data, unique_identifier, certification_granted, program_length=None, program_cost=None):
 		self._validate_dataframe(data)

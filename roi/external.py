@@ -68,24 +68,15 @@ class BLS_API:
 		https://www.bls.gov/developers/api_faqs.htm
 
 	"""
-	def __init__(self, bls_api_key = None, query=True):
-
-		if query == False:
-			print("When query=False, ROI Toolkit BLS_API will attempt to locate a local tabular file containing the results of a previous query. By default, this data is located in roi/data/bls.")
-			self.bls_wage_series = utilities.Local_Data.bls_wage_series()
-			self.bls_employment_series = utilities.Local_Data.bls_employment_series()
-			self.bls_laborforce_series = utilities.Local_Data.bls_laborforce_series()
-			self.cpi_adjustment_series = utilities.Local_Data.cpi_adjustments()
-			self.employment_rate_series = self.make_employment_rate_frame(self.bls_employment_series, self.bls_laborforce_series)
-		else: 
-			if (bls_api_key is None):
-				bls_api_key = os.getenv('BLS_API_KEY') # unnecessary for BLS series 1.0 api but series 2 API overcomes #extreme rate limiting
-				if bls_api_key is None:
-					raise NameError("The BLS_API class requires that you provide an API key to the Bureau of Labor Statistics API. You can pass this key directly when instantiating the class (e.g. BLS_API(YOUR_KEY_HERE) or (preferably) by setting an environment variable called BLS_API_KEY. For more information please see the BLS API docs at: https://www.bls.gov/developers/api_faqs.htm")
-				else:
-					self.bls_api_key = bls_api_key
+	def __init__(self, bls_api_key = None):
+		if (bls_api_key is None):
+			bls_api_key = os.getenv('BLS_API_KEY') # unnecessary for BLS series 1.0 api but series 2 API overcomes #extreme rate limiting
+			if bls_api_key is None:
+				raise NameError("The BLS_API class requires that you provide an API key to the Bureau of Labor Statistics API. You can pass this key directly when instantiating the class (e.g. BLS_API(YOUR_KEY_HERE) or (preferably) by setting an environment variable called BLS_API_KEY. For more information please see the BLS API docs at: https://www.bls.gov/developers/api_faqs.htm")
 			else:
 				self.bls_api_key = bls_api_key
+		else:
+			self.bls_api_key = bls_api_key
 
 	def get_cpi(self, prefix="CU", seasonal_adjustment_code="S", periodicity="R", area_code="0000", base_code="S", item_code="A0"):
 		"""

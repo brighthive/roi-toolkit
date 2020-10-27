@@ -67,15 +67,6 @@ class Summaries:
 		return(grouped)
 
 
-class Dates:
-
-	def combine(year_series, month_series):
-		return(None)
-
-	def separate(year_and_month_column):
-		return(None)
-
-
 def State_To_FIPS(state_abbreviation):
 	crosswalk = Data.state_crosswalk
 	# hardcoded - FIPS aren't changing anytime soon
