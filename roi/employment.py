@@ -1,9 +1,7 @@
 from roi import settings, utilities, external
 
 class Employment_Likelihood:
-	def __init__(self, dataframe, program_identifier, entry_year_month, exit_year_month, employed_at_end, employed_at_start, age_group_at_start, state, query=False):
-		if query == False:
-			print("By default, the Employment_Likelihood class operates using an instance of the BLS_API() class with query = False. This class will search locally for previously downloaded BLS files with which to work. If query = True, it will download them, provided the user has set a BLS API key.")
+	def __init__(self, dataframe, program_identifier, entry_year_month, exit_year_month, employed_at_end, employed_at_start, age_group_at_start, state):
 		self.raw_likelihood_at_end = self._raw_likelihood_at_end(dataframe, program_identifier, employed_at_end)
 		self.raw_likelihood_change = self._raw_likelihood_change(dataframe, program_identifier, employed_at_end, employed_at_start)
 		self.data = dataframe
@@ -23,8 +21,7 @@ class Employment_Likelihood:
 
 	@staticmethod
 	def _fetch_macro_correction(dataframe, entry_year_month, exit_year_month, state, query):
-		bls = external.BLS_API(query=query)
-		rates = bls.employment_rate_series
+		rates = utilities.Local_Data.bls_employment_series()
 		dataframe[state] = utilities.check_state_code_series(dataframe[state])
 		entry_employment = dataframe.merge(rates, left_on=[state, entry_year_month], right_on=['state_code','month_year'], how='left')
 		exit_employment = dataframe.merge(rates, left_on=[state, exit_year_month], right_on=['state_code','month_year'], how='left')
