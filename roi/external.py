@@ -420,3 +420,63 @@ class Census:
 			#print(response_parsed)
 			print("EXCEPTION: Couldn't access vital response elements in geocode API response:\n 	{}".format(e))
 			return ""
+
+
+def fetch_bls_data(start_year, end_year):
+	bls = BLS_API()
+	
+	# set up data frames
+	employment_dataframe = pd.DataFrame()
+	wage_dataframe = pd.DataFrame()
+	labor_force_dataframe = pd.DataFrame()
+
+	# loop over FIPS codes to get wage and unemployment data for every state
+	for state_code in utilities.Data.state_crosswalk.values():
+
+		# absolute employment numbers
+		emp_series_id = bls.employment_series_id(state_code=state_code)
+		emp_raw_response = bls.get_series(emp_series_id, start_year, end_year)
+
+		# absolute labor force numbers
+		lf_series_id = bls.employment_series_id(state_code=state_code, measure_code="labor force")
+		lf_raw_response = bls.get_series(lf_series_id, start_year, end_year)
+
+		# absolute wage numbers - UNADJUSTED
+		wage_series_id = bls.wage_series_id(state_code=state_code)
+		wage_raw_response = bls.get_series(wage_series_id, start_year, end_year)
+
+		try:
+			employment = bls.parse_api_response(emp_raw_response)
+			laborforce = bls.parse_api_response(lf_raw_response)
+			wage = bls.parse_api_response(wage_raw_response)
+		except Exception as E:
+			# Errors are caught here and the loop continues. Read the output!
+			print("Failed fetching data for {}".format(state_code))
+			print(E)
+			continue
+
+		# Set state code columns for each datagrame
+		employment['state_code'] = state_code
+		laborforce['state_code'] = state_code
+		wage['state_code'] = state_code
+
+		# append dataframes
+		employment_dataframe = employment_dataframe.append(employment)
+		wage_dataframe = wage_dataframe.append(wage)
+		labor_force_dataframe = labor_force_dataframe.append(laborforce)
+		print("Fetched BLS data for {}!".format(state_code))
+
+	# create employment rate series
+	employment_rate_dataframe = bls.make_employment_rate_frame(employment_dataframe, labor_force_dataframe)
+
+	# save CSVs
+	employment_dataframe.to_csv(settings.File_Locations.bls_employment_location, index=False)
+	labor_force_dataframe.to_csv(settings.File_Locations.bls_laborforce_location, index=False)
+	wage_dataframe.to_csv(settings.File_Locations.bls_wage_location, index=False)
+	employment_rate_dataframe.to_csv(settings.File_Locations.bls_employment_rate_location, index=False)
+
+	# get cpi data
+	cpi = bls.get_cpi_adjustment_range(1999, end_year)
+	cpi.to_csv(settings.File_Locations.cpi_adjustments_location, index=False)
+
+	return(None)

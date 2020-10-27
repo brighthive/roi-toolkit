@@ -5,12 +5,16 @@ import pandas as pd
 import warnings
 
 class BLS_Ops:
+	"""
+
+	"""
 	def __init__(self):
 		try:
 			self.cpi_adjustments = utilities.Local_Data.cpi_adjustments()
 			self.employment_series = utilities.Local_Data.bls_employment_series()
 			self.laborforce_series = utilities.Local_Data.bls_laborforce_series()
 			self.wage_series = utilities.Local_Data.bls_wage_series()
+			self.max_cpi_year = self.cpi_adjustments['year'].max()
 		except Exception as E:
 			print("The ROI Toolkit is packaged with precalculated BLS series at the state level, but BLS_Ops() couldn't load at least one of these files:{}\n".format(E))
 
@@ -46,6 +50,12 @@ class BLS_Ops:
 		# adjust and return
 		adjusted_column = frame_merged[value_column_name]/frame_merged['cpi'] * max_cpi_index
 		return(adjusted_column)
+
+	def get_single_year_adjustment_factor(self, start_year, end_year):
+		end_CPI = self.cpi_adjustments.loc[self.cpi_adjustments['year'] == end_year, 'cpi'].iloc[0] # get latest year of CPI data
+		start_CPI = self.cpi_adjustments.loc[self.cpi_adjustments['year'] == start_year, 'cpi'].iloc[0] # get latest year of CPI data
+		return(end_CPI / start_CPI)
+
 
 	def employment_change(self, state_code, start_month, end_month):
 		"""
