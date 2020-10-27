@@ -9,6 +9,11 @@ from matplotlib import pyplot as plt
 
 if __name__ == "__main__":
 
+	bls = macro.BLS_Ops()
+	conversion = bls.get_single_year_adjustment_factor(2002,2018)
+	print(conversion)
+	exit()
+
 	programs_data = pd.read_csv("testing/testing-data/programs.csv")
 
 	test_microdata = pd.read_csv("testing/testing-data/test_microdata.csv")
