@@ -125,4 +125,7 @@ class Earnings_Premium:
 		# here - do not report if less than default number!
 		return(summaries)
 
+class Premium_Output:
+	def __init__(self):
+		return(None)
 
