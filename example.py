@@ -34,27 +34,27 @@ if __name__ == "__main__":
 
 	# Get earnings summary from test microdata
 
-	# test_summary = earnings.Summary(test_microdata, 'earnings_end')
+	# test_summary = metrics.Summary(test_microdata, 'earnings_end')
 	# stats = test_summary.earnings_summaries(['program'])
 	# print(stats)
 
 	# Calculate the individual-level earnings premium for a single individual
 
-	#prem = earnings.Premium()
+	#prem = metrics.Premium()
 	#premium_test = prem.mincer_based_wage_change(state=36, prior_education=92, current_age=30, starting_wage=10000, years_passed=4)
 	#print(premium_test)
 	#exit()
 
 	# Calculate the individual-level earnings premia for all rows in a dataframe
 
-	#prem = earnings.Premium()
+	#prem = metrics.Premium()
 	#premium_calc = prem.Full_Earnings_Premium(test_microdata, 'earnings_start', 'earnings_end', 'program_start', 'program_end','age','08','education_level')
 	#print(premium_calc)
 	#exit()
 
 	# Calculate program-level earnings premium statistics!
 
-	# prem = earnings.Premium()
+	# prem = metrics.Premium()
 	# premium_calc = prem.Group_Earnings_Premium(test_microdata, 'earnings_start', 'earnings_end', 'program_start', 'program_end','age','state','education_level','program')
 	# print(premium_calc)
 	# exit()
@@ -64,7 +64,7 @@ if __name__ == "__main__":
 	# Calculate Theil T ratio for earnings
 
 	# First we need to get an earnings column
-	#prem = earnings.Premium()
+	#prem = metrics.Premium()
 	#premium_calc = prem.Full_Earnings_Premium(test_microdata, 'earnings_start', 'earnings_end', 'program_start', 'program_end','age','state','education_level')
 	# Now we calculate inequality across races
 	#theil_t_1= equity.Theil_T.Ratio_From_DataFrame(premium_calc, 'earnings_end', 'race') # final earnings is always positive - but earnings premium can be negative, so Theil can't be used!
@@ -112,7 +112,7 @@ if __name__ == "__main__":
 	# Employment
 	#test_microdata['start_month_year'] = test_microdata['program_start'].astype(str) + '-' + test_microdata['start_month'].astype(str).str.pad(2, fillchar='0')
 	#test_microdata['end_month_year'] = test_microdata['program_end'].astype(str) + '-' + test_microdata['end_month'].astype(str).str.pad(2, fillchar='0')
-	#employment = employment.Employment_Likelihood(test_microdata, 'program', 'start_month_year', 'end_month_year', 'employed_at_end', 'employed_at_start','age_group_at_start','state')
+	#employment = metrics.Employment_Likelihood(test_microdata, 'program', 'start_month_year', 'end_month_year', 'employed_at_end', 'employed_at_start','age_group_at_start','state')
 	#print(employment.employment_premium)
 	#exit()
 	#exit()
@@ -135,7 +135,7 @@ if __name__ == "__main__":
 	#test_microdata['start_year'] = 2011
 	#test_microdata['end_year'] = 2015
 	#test_microdata['statefip'] = utilities.check_state_code_series(test_microdata['state'])
-	#prem = earnings.Earnings_Premium(test_microdata, 'statefip', 'education_level', 'earnings_start', 'earnings_end', 'start_year', 'end_year', 'age')
+	#prem = metrics.Earnings_Premium(test_microdata, 'statefip', 'education_level', 'earnings_start', 'earnings_end', 'start_year', 'end_year', 'age')
 	#test_microdata['predicted'] = prem.predicted_wage
 	#test_microdata['raw_change'] = test_microdata['earnings_end'] - test_microdata['earnings_start']
 	#test_microdata['premium'] = prem.full_premium
