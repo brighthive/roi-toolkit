@@ -125,11 +125,6 @@ class Earnings_Premium:
 		# here - do not report if less than default number!
 		return(summaries)
 
-class Premium_Output:
-	def __init__(self):
-		return(None)
-
-from roi import settings, utilities, external
 
 class Employment_Likelihood:
 	def __init__(self, dataframe, program_identifier, entry_year_month, exit_year_month, employed_at_end, employed_at_start, age_group_at_start, state):

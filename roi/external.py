@@ -249,6 +249,10 @@ class BLS_API:
 		Remember - it takes a maximum of twenty years!
 
 		Because the CPI-U returns an index using 1982 as a base year, we average the index to get a year-level inflation index.
+		This smooths volatility in CPI. This function can be modified to return monthly figures, but the default is to return
+		the annual mean in order to discourage analyses based on statistical artifacts. For example, students who happen
+		to enter a program in a CPI trough and exit in a CPI peak will appear to have gained more in terms of earnings
+		than we might reasonably conclude they actually had.
 
 		Parameters:
 		-----------
@@ -476,7 +480,7 @@ def fetch_bls_data(start_year, end_year):
 	employment_rate_dataframe.to_csv(settings.File_Locations.bls_employment_rate_location, index=False)
 
 	# get cpi data
-	cpi = bls.get_cpi_adjustment_range(1999, end_year)
+	cpi = bls.get_cpi_adjustment_range(1999, end_year) # start in 1999 always - this is the base year for CPS adjusted income
 	cpi.to_csv(settings.File_Locations.cpi_adjustments_location, index=False)
 
 	return(None)

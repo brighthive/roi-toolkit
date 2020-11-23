@@ -164,7 +164,7 @@ class CPS_Ops(object):
 		return(merged_both)
 
 
-	def fit_mincer_model(self, force_fit=False):
+	def fit_mincer_model(self):
 
 		"""
 		This function fits a modified Mincer model and saves the results. If results already exist,
@@ -185,13 +185,6 @@ class CPS_Ops(object):
 		may have a higher return than for a high school grad) and the diminishing returns to experience (e.g. for some levels of
 		education, annual wages level off for late-career workers).
 		"""
-
-		'''# Check if a saved model exists. If it does, load and pass; if not, fit and pass
-		if (path.exists(settings.File_Locations.model_location) & force_fit == False):
-			self.mincer = sm.load(settings.File_Locations.model_location)
-			return(self)
-		else:
-			pass'''
 
 		data = self.microdata[(self.microdata.INCTOT_current > 0) & (self.microdata['AGE'] <= 65)]
 
