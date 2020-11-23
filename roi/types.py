@@ -47,7 +47,7 @@ class Validator:
 		return(None)
 
 
-class Programs(Validator):
+class ProgramRecord(Validator):
 	def __init__(self, data, unique_identifier, certification_granted, program_length=None, program_cost=None):
 		self._validate_dataframe(data)
 		self._validate_identifier(unique_identifier)
@@ -100,7 +100,7 @@ class Programs(Validator):
 		return(None)
 
 
-class WageRecord(Validator):
+class IndividualRecord(Validator):
 	def __init__(self, data, unique_identifier, unit_of_analysis):
 		self._validate_dataframe(data)
 		self._validate_identifier(unique_identifier)
