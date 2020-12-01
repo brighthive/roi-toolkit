@@ -22,9 +22,16 @@ class Metric():
 
 	# factory method
 	@classmethod
-	def from_dataframe(cls, frame, group_columns, value_column):
+	def from_dataframe(cls, frame, group_columns, value_column, sample=False):
+		if sample != False:
+			warnings.warn("When sample == True, Metric() will use the value of sample to create a random subset of values that it will use for all calculations. This number will be stored as attribute .samplesize.")
+			if not isinstance(sample, int):
+				raise ValueError("If not False, sample must be an integer")
+			else:
+				frame = frame.sample(sample)
 		unique_groups, grouped_values = utilities.dataframe_groups_to_ndarray(frame, group_columns, value_column)
 		cls.summary = utilities.multiple_describe(frame, group_columns, value_column)
+		cls.sample = sample
 		return(cls(unique_groups, grouped_values))
 
 	@staticmethod
@@ -302,8 +309,8 @@ class Gini(Metric):
 		self.within = self.gini_within(self.grouped_values)
 		self.between = self.gini_between(self.grouped_values)
 		self.overall = self.gini(self.ungrouped_observations)
-		self.residual = self.G_overall - (self.G_within + self.G_between)
-		self.ratio = self.G_between / self.G_overall
+		self.residual = self.overall - (self.within + self.between)
+		self.ratio = self.between / self.overall
 
 	@staticmethod
 	def gini_within(array_of_values):
