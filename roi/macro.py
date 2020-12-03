@@ -19,6 +19,9 @@ class BLS_Ops:
 			print("The ROI Toolkit is packaged with precalculated BLS series at the state level, but BLS_Ops() couldn't load at least one of these files:{}\n".format(E))
 
 	def adjust_to_current_dollars(self, frame_, year_column_name, value_column_name):
+		"""
+		DOCSTRING
+		"""
 		max_year_row = self.cpi_adjustments.loc[self.cpi_adjustments['year'] == self.cpi_adjustments['year'].max()].iloc[0] # get latest year of CPI data
 		max_year = max_year_row['year']
 		max_cpi_index = max_year_row['cpi']
@@ -52,13 +55,21 @@ class BLS_Ops:
 		return(adjusted_column)
 
 	def get_single_year_adjustment_factor(self, start_year, end_year):
+
+		# validation
+		if not isinstance(start_year, int) or not isinstance(end_year, int):
+			if isinstance(start_year, pd.Series) or isinstance(end_year, pd.Series):
+				print("To convert a Pandas Series using CPI, use the adjust_to_current_dollars() method.")
+			raise ValueError("start_year and end_year must be scalar integers")
+
 		end_CPI = self.cpi_adjustments.loc[self.cpi_adjustments['year'] == end_year, 'cpi'].iloc[0] # get latest year of CPI data
 		start_CPI = self.cpi_adjustments.loc[self.cpi_adjustments['year'] == start_year, 'cpi'].iloc[0] # get latest year of CPI data
 		return(end_CPI / start_CPI)
 
-
 	def employment_change(self, state_code, start_month, end_month):
 		"""
+		This function takes PD series.
+
 		This function takes year/month YYYY-MM as datetime arguments to avoid false precision.
 		It fetches the associated figures from the BLS statistics provided as a function argument for
 		the first of the month provided.
@@ -74,6 +85,13 @@ class BLS_Ops:
 		A single number indicating the employment change over the given period
 		"""
 
+		# check state codes
+		all_state_codes = state_code.unique()
+		unmerged_state_codes = set(all_state_codes).difference(set(utilities.Data.state_crosswalk.keys()))
+		if len(unmerged_state_codes) > 0:
+			warnings.warn("Series passed as argument state_code contains invalid values for state codes. Please refer to https://www.bls.gov/respondents/mwr/electronic-data-interchange/appendix-d-usps-state-abbreviations-and-fips-codes.htm for valid codes.")
+
+		# do the work
 		temp_frame = pd.DataFrame({'start_month':start_month,'end_month':end_month,'state_code':state_code})
 
 		# employment merges
@@ -106,12 +124,13 @@ class BLS_Ops:
 		temp_frame['wage_start'] = temp_frame.merge(self.wage_series, left_on=['start_month','state_code'], right_on=['month_year','state_code'], how='left')['value']
 		temp_frame['wage_end'] = temp_frame.merge(self.wage_series, left_on=['end_month','state_code'], right_on=['month_year','state_code'], how='left')['value']
 
+		# convert to current dollars
 		if convert == True:
 			temp_frame['start_year'] = temp_frame['start_month'].str.split('-',expand=True)[0].astype(int)
 			temp_frame['end_year'] = temp_frame['end_month'].str.split('-',expand=True)[0].astype(int)
 			wage_start = self.adjust_to_current_dollars(temp_frame, 'start_year', 'wage_start')
 			wage_end = self.adjust_to_current_dollars(temp_frame, 'end_year', 'wage_end')
-		else:
+		else: # or not
 			wage_start = temp_frame['wage_start']
 			wage_end = temp_frame['wage_end']
 
