@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from roi import earnings, types, external, equity, utilities, completion, employment, macro
+from roi import metrics, types, external, equity, utilities, macro, cost
 from roi.utilities import Local_Data
 from datetime import date
 import sys
@@ -9,10 +9,10 @@ from matplotlib import pyplot as plt
 
 if __name__ == "__main__":
 
-	bls = macro.BLS_Ops()
-	conversion = bls.get_single_year_adjustment_factor(2002,2018)
-	print(conversion)
-	exit()
+	#bls = macro.BLS_Ops()
+	#conversion = bls.get_single_year_adjustment_factor(2002,2018)
+	#print(conversion)
+	#exit()
 
 	programs_data = pd.read_csv("testing/testing-data/programs.csv")
 
@@ -25,12 +25,6 @@ if __name__ == "__main__":
 	#print(test_microdata.head())
 
 	###### basic functions  ######
-	
-	# Adjust a dollar column in the microdata to current dollars
-
-	# cpi_adjustments = utilities.Local_Data.cpi_adjustments()
-	# test_microdata['fixed'] = external.Adjustments.adjust_to_current_dollars(test_microdata, 'program_start', 'earnings_start', cpi_adjustments)
-	# print(test_microdata)
 
 	# Get earnings summary from test microdata
 
@@ -161,15 +155,29 @@ if __name__ == "__main__":
 	#print(test_microdata)
 
 	# employment change in one state over time
-	test_microdata['end_month'] = pd.to_datetime(dict(year='2012', month=test_microdata['start_month'], day=1)).dt.strftime('%Y-%m')
-	test_microdata['start_month'] = pd.to_datetime(dict(year='2011', month=test_microdata['start_month'], day=1)).dt.strftime('%Y-%m')
-	test_microdata['statefip'] = utilities.State_To_FIPS_series(test_microdata['State'])
+	#test_microdata['end_month'] = pd.to_datetime(dict(year='2012', month=test_microdata['start_month'], day=1)).dt.strftime('%Y-%m')
+	#test_microdata['start_month'] = pd.to_datetime(dict(year='2011', month=test_microdata['start_month'], day=1)).dt.strftime('%Y-%m')
+	#test_microdata['statefip'] = utilities.State_To_FIPS_series(test_microdata['State'])
 
-	bls = macro.BLS_Ops()
-	test_microdata['employment_change'] = bls.employment_change(test_microdata['statefip'], test_microdata['start_month'], test_microdata['end_month'])
-	test_microdata['wage_change'] = bls.wage_change(test_microdata['statefip'], test_microdata['start_month'], test_microdata['end_month'], convert=True)
+	#bls = macro.BLS_Ops()
+	#test_microdata['employment_change'] = bls.employment_change(test_microdata['statefip'], test_microdata['start_month'], test_microdata['end_month'])
+	#test_microdata['wage_change'] = bls.wage_change(test_microdata['statefip'], test_microdata['start_month'], test_microdata['end_month'], convert=True)
 
-	print(test_microdata)
+	# CPI adjustment
+	#bls = macro.BLS_Ops()
+	#test_microdata['fixed_dollars'] = bls.adjust_to_current_dollars(test_microdata, 'program_start', 'earnings_start')
+	#print(test_microdata)
+
+	# Testing equity class
+	#gini_test = equity.Gini.from_dataframe(test_microdata, 'program', 'earnings_end', sample=100)
+	#gini_test.calculate()
+	#print(gini_test.ratio)
+	#print(gini_test.sample)
+
+	sample_loan = cost.Compound_Interest_Loan.calculate_period_payment(10000, 0.05, 24)
+	balance_remaining = cost.Compound_Interest_Loan.amount_to_be_paid_after_n_periods(10000,0.05,24,23)
+	print(sample_loan)
+	print(balance_remaining)
 
 
 
