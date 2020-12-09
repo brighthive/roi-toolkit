@@ -1,11 +1,22 @@
-from roi import external
 from datetime import date
 from roi import settings, utilities
 import pandas as pd
 import warnings
 
+
+"""
+This submodule contains methods and classes for working with macroeconomic data and using it to conduct basic calculations.
+As of this writing (09/12/2020), BLS_Ops() is the only class in the submodule, but it does many useful things!
+"""
+
 class BLS_Ops:
 	"""
+	On init, this class reads in previously prepared data that should be packaged with the ROI Toolkit.
+	In order to refresh this data and store it locally (in the directories where e.g. this class will look for it),
+	analysts or engineers can and should use the BLS_API.fetch_bls_data() method after signing up for a free
+	key for the U.S. Bureau of Labor Statistics API.
+
+	On init, if this data is available, BLS_Ops() will load up historical employment, wage, labor force, and inflation data.
 
 	"""
 	def __init__(self):
@@ -20,7 +31,15 @@ class BLS_Ops:
 
 	def adjust_to_current_dollars(self, frame_, year_column_name, value_column_name):
 		"""
-		DOCSTRING
+		Given a dataframe with a year column and a column of values, this method will adjust all values to present-year dollars.
+
+		Parameters:
+			frame_				:	A pandas DataFrame
+			year_column_name	:	The name of a column 
+			value_column_name
+
+		Returns:
+
 		"""
 		max_year_row = self.cpi_adjustments.loc[self.cpi_adjustments['year'] == self.cpi_adjustments['year'].max()].iloc[0] # get latest year of CPI data
 		max_year = max_year_row['year']
@@ -136,8 +155,3 @@ class BLS_Ops:
 
 		wage_change = (wage_end - wage_start)*52 # convert to annual wage
 		return(wage_change)
-
-
-class ADI:
-	def __init__(self):
-		return(None)
