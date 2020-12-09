@@ -8,8 +8,11 @@ from roi import settings, utilities
 import warnings
 
 """
+This submodule contains methods for communicating with external APIs and gathering data, mostly macroeconomic statistics,
+than may be necessary for calculating robust ROI metrics in a U.S. setting.
 
-##### Notes #####
+
+##### BLS Resources #####
 
 # Main Background:
 https://www.bls.gov/cps/data.htm
@@ -18,16 +21,6 @@ https://download.bls.gov/pub/time.series/le/le.series
 
 # Compressed flat files
 https://download.bls.gov/pub/time.series/compressed/tape.format/
-
-###### Important things to know
-
-Important things to know from https://www.bls.gov/developers/api_faqs.htm
-
-How many requests can I make daily?
-Registered users may request up to 500 queries daily. Unregistered users may request up to 25 queries daily.
- 
-How many series can I include in a query?
-Registered users may request up to 50 series per query. Unregistered users may request up to 25 series per query.
 
 ###### Figuring out LE series
 
@@ -40,6 +33,11 @@ LE + seasonal adjustment code[1 - U/S] + ?[1] + lfst_code[2] + ?[5] ?[2]
 """
 
 class Parameters:
+	"""
+	Paramaters for classes and methods in this submodule
+	"""
+
+	# These are codes used in the BLS API
 	BLS_measure_codes = {
 		"unemployment rate": "03",
 		"unemployment": "04",
@@ -49,23 +47,27 @@ class Parameters:
 
 class BLS_API:
 	"""
-	Functions needed for collecting data from the Bureau of Labor Statistics API.
+	This class contains methods needed for collecting data from the Bureau of Labor Statistics API.
+	On init, it checks to see if if the environment variable BLS_API_KEY is set. If it's not set, it must
+	be passed as the class instance's sole argument. If neither case obtains, the class will throw an error.
 
 	The BLS API takes as a main argument Series IDs describing the type and format of data to be retrieved.
 	The API takes start and and years as additional arguments, but geographic specifications, for example,
-	need to be included as prat of the series ID.
+	need to be included as part of the series ID.
 
 	Comments in this class don't explain all arguments related to BLS API calls. Each method contains a link to the API
 	page for the associated series. Parameters subject to change in the other methods in this class are the only ones listed
 	under parameters for each method.
 
-	Reference:
-	---------
-	Series ID Formats:
-		https://www.bls.gov/help/hlpforma.htm
+	Parameters:
+		bls_api_key : Key for the BLS API (optional)
 
-	API FAQs:
-		https://www.bls.gov/developers/api_faqs.htm
+	Attributes:
+		self.bls_api_key : same as bls_api_key argument
+
+	Reference:
+		Series ID Formats: https://www.bls.gov/help/hlpforma.htm
+		API FAQs: https://www.bls.gov/developers/api_faqs.htm
 
 	"""
 	def __init__(self, bls_api_key = None):
@@ -84,14 +86,12 @@ class BLS_API:
 		Form sequence ID for the CPI-U: The Consumer Price Index for Urban Consumers.
 		This is an index of inflation that is (as of 12/2019) returned with base year 1982, where the CPI-U = 100.
 
+
 		Parameters:
-		-----------
-		area_code : str
-			"0000" is the nationwide code. Realistically, this is what should be used.
+			Please see the BLS API documentation for comlete information about arguments to this method
 
 		Returns:
-		-------
-		A string containing the a Series ID, to be passed to the BLS API.
+			series_id : A string containing the a Series ID, to be passed to the BLS API. For most use cases, this method should be called with the default arguments.
 
 		"""
 		series_id = prefix + seasonal_adjustment_code + periodicity + area_code + base_code + item_code
@@ -100,17 +100,13 @@ class BLS_API:
 	def employment_series_id(self, state_code, prefix="LA", seasonal_adjustment_code="U", measure_code="employment"):
 		"""
 
-		Form Series ID for Local Area Unemplyoment statistics (prefix LA) from the BLS.
+		Form Series ID for Local Area Unemployment statistics (prefix LA) from the BLS.
 
 		Parameters:
-		-----------
-		measure_code : str
-			One of "unemployment rate", "unemployment", "employment", "labor force".
-			See class Parameters.BLS_measure_codes, which provides a useful dict that translates these into the numerical codes used by the API.
+			measure_code : str, One of "unemployment rate", "unemployment", "employment", "labor force". See class Parameters.BLS_measure_codes, which provides a useful dict that translates these into the numerical codes used by the API.
 
 		Returns:
-		-------
-		A string containing the a Series ID, to be passed to the BLS API.
+			series_id : A string containing the a Series ID, to be passed to the BLS API.
 
 		"""
 		state_code = utilities.check_state_code(state_code)
@@ -123,16 +119,13 @@ class BLS_API:
 	def wage_series_id(self, state_code, prefix="SM", seasonal_adjustment_code="U", area_code="00000", industry_code="05000000", data_type_code="11"):
 		"""
 
-		Form Series ID for ____________ statistics (prefix SM) from the BLS. 
+		Form Series ID for weekly wage statistics (prefix SM) from the BLS. 
 
 		Parameters:
-		-----------
-		state_code : str
-			State-level FIPS codes as strings, e.g. "08" for Colorado.
+			state_code : str, State-level FIPS codes as strings, e.g. "08" for Colorado.
 
 		Returns:
-		-------
-		A string containing the a Series ID, to be passed to the BLS API.
+			series_id : A string containing the a Series ID, to be passed to the BLS API.
 
 		"""
 		state_code = utilities.check_state_code(state_code)
@@ -149,20 +142,13 @@ class BLS_API:
 		Data is returned as JSON at the year/month level.
 
 		Parameters:
-		-----------
-		series_id : str
-			Series ID formed by wage_series_id(), employment_series_id(), etc.
-
-		startyear: int or str
-			Year when we want the data to start
-
-		endyear: int or str
-			Year when we want the data to end
+			series_id    :    str, Series ID formed by wage_series_id(), employment_series_id(), etc.
+			startyear    :    int or str, Year when we want the data to start
+			endyear      :    int or str, Year when we want the data to end
 
 
 		Returns:
-		-------
-		string containing API response as JSON
+			content      :     string containing BLS API response as JSON
 
 		"""
 		api_key = self.bls_api_key
@@ -174,16 +160,13 @@ class BLS_API:
 	def parse_api_response(self, json_response):
 		"""
 
-		Take the response from the BLS API, passed as a string, parse the JSON, remove excess columns, and convert dates to datetimes.
+		Take the response from the BLS API, passed as a string, parse the JSON, remove excess data, and convert dates to datetimes.
 
 		Parameters:
-		-----------
-		json_response : str
-			Response from BLS API
+			json_response :    str, response from BLS API
 
 		Returns:
-		-------
-		dataframe containing parsed response.
+			data_frame    :    dataframe containing parsed response.
 
 		"""
 		parsed = json.loads(json_response)
@@ -212,20 +195,12 @@ class BLS_API:
 		The CPI API returns only twenty years of data, and the time frame we are interested in may (will) span longer than twenty years.
 		So to avoid that (pretty unlikely situation), for any pair of years, we make two requests and simply return the adjustment factor
 
-		IMPORTANT:
-		Month/year data is a little bit too granular for our purposes so this function returns the CPI index for January of each year.
-
 		Parameters:
-		-----------
-		start_year : str or int
-			start year
-
-		end_year : str or int
-			end year
+			start_year   :  str or int, start year
+			end_year     :  str or int, end year
 
 		Returns:
-		-------
-		Float representing adjustment factor
+			adjustment   :  Float representing adjustment factor
 
 		"""
 		series_id = self.get_cpi()
@@ -245,26 +220,23 @@ class BLS_API:
 
 	def get_cpi_adjustment_range(self, start_year, end_year):
 		"""
-		Thehis is identical to get_cpi_adjustment() except it returns the CPI indices for the given range, so it returns a dataframe
+		This is identical to get_cpi_adjustment() except it returns the CPI indices for the given range, so it returns a dataframe
 		Remember - it takes a maximum of twenty years!
 
-		Because the CPI-U returns an index using 1982 as a base year, we average the index to get a year-level inflation index.
+		Because the CPI-U returns an index using 1982 as a base year, we average the index within each year to get a year-level inflation index.
 		This smooths volatility in CPI. This function can be modified to return monthly figures, but the default is to return
 		the annual mean in order to discourage analyses based on statistical artifacts. For example, students who happen
 		to enter a program in a CPI trough and exit in a CPI peak will appear to have gained more in terms of earnings
 		than we might reasonably conclude they actually had.
 
-		Parameters:
-		-----------
-		start_year : str or int
-			start year
+		This function also sets the CPI adjustment series as an attribute of the parent class BLS_API().
 
-		end_year : str or int
-			end year
+		Parameters:
+			start_year : str or int, start year
+			end_year : str or int, end year
 
 		Returns:
-		-------
-		Dataframe representing national CPI indices at the national level for January in each year in the range provided.
+			annual : Dataframe representing national CPI indices at the national level for January in each year in the range provided.
 		"""
 		if (int(end_year) - int(start_year) > 20):
 			raise Exception("get_cpi_adjustment_range({}, {}) offered more than 20 years of data; API returns only 20 years".format(str(start_year), str(end_year)))
@@ -279,8 +251,19 @@ class BLS_API:
 		return(annual)
 
 	def get_employment_data(self, state_code, start_year, end_year, measure):
+		"""
+		This is the main method for fetching historical employment data for a given state and set of years.
 
-		# measure must be one of ["employment", "labor force"]
+		Parameters:
+			state_code :  State FIPS code, e.g. "08" 
+			start_year :  Start year
+			end_year   :  End year
+			measure    :  Measure. Must be one of ["employment", "labor force"]
+
+		Returns:
+			employment : A dataframe containing the relevant employment statistic specified by measure.
+
+		"""
 		series_id = self.employment_series_id(state_code=state_code, measure_code=measure)
 		raw_response = self.get_series(series_id, start_year, end_year)
 		employment = self.parse_api_response(raw_response)
@@ -293,7 +276,18 @@ class BLS_API:
 		return(employment)
 
 	def get_wage_data(self, state_code, start_year, end_year):
+		"""
+		This is the main method for fetching historical employment data for a given state and set of years.
 
+		Parameters:
+			state_code :  State FIPS code, e.g. "08" 
+			start_year :  Start year
+			end_year   :  End year
+
+		Returns:
+			employment : A dataframe containing historical wage data for the specified state and time period
+
+		"""
 		series_id = self.wage_series_id(state_code=state_code)
 		raw_response = self.get_series(series_id, start_year, end_year)
 		wage = self.parse_api_response(raw_response)
@@ -301,6 +295,18 @@ class BLS_API:
 		return(wage)
 
 	def make_employment_rate_frame(self, employment_series, laborforce_series):
+		"""
+		Creates a dataframe containing the employment rate for a set of states and month/year periods.
+		The employment and labor force methods return absolute figures, so rates must be calcualte
+
+		Parameters:
+			employment_series   :   A dataframe structurally identical to that produced by get_employment_data(..., measure="employment")
+			laborforce_series   :   A dataframe structurally identical to that produced by get_employment_data(..., measure="labor force")
+
+		Returns:
+			final               :   A dataframe containing employment rate (for labor force participants) in the given locations over the given time period
+
+		"""
 		employment_rate_series = employment_series.merge(laborforce_series, on=["state_code", "month_year"], suffixes=("_emp","_labor"))
 		employment_rate_series['employment_rate'] = employment_rate_series['value_emp'] / employment_rate_series['value_labor']
 		final = employment_rate_series[['state_code','month_year','employment_rate']]
@@ -308,31 +314,35 @@ class BLS_API:
 
 
 class Census:
+	"""
+	As of this writing, (12/09/2020), the main purpose of this class is to fetch geocodes from the Census Geocoder API.
+	For more detail, please see https://geocoding.geo.census.gov/geocoder/Geocoding_Services_API.pdf
+	"""
 
 	def get_batch_geocode(dataframe):
 		"""
-		Fetches a 12-digit FIPS code from the Census Geocoder API.
+		Fetches a 12-digit FIPS code from the Census Geocoder API for a dataframe passed as this function's sole argument.
+
+		Unlike other methods in the ROI Toolkit, this method must take a dataframe that has columns with specific column names and contents.
+
+		These columns are:
+			id             :        A unique identifier for each address
+			Address        :        A street address, e.g. "42 Zaphod Beeblebrox Avenue"
+			City           :        A city, e.g. "New York" or "New York City"
+			State          :        A two-digit state postal code such as "CA"
+			Zip            :        A ZIP5 code, such as "90210"
 
 		The Geocoder returns a JSON object containing all relevant geographic data, such as latitude and longitude.
 		But this function simply takes the components necessary to create a GEOID at the block group level.
-		Block groups roughly correspond to neighborhoods.
+		Block groups very roughly correspond to neighborhoods.
 
 		We use the JSON response here to form GEOID as follows with COMPONENTS[LENGTH]: STATE[2] + COUNTY[3] + TRACT[6] + BLOCK GROUP[1] = GEOID[12]
 
 		Parameters:
-		-----------
-		address : str
-			Street address e.g. "42 Zaphod Beeblebrox Avenue"
+			dataframe     :       A dataframe with the columns outlined above
 
-		city : str
-			City name e.g. "Prefectville"
-
-		state_code : str
-			Two-digit state postal code e.g.: "CA" or "NY"
-
-		Returns
-		-------
-		A twelve-digit code -- as a string -- denoting a neighborhood-sized region in the United States.
+		Returns:
+			geocodes:      :      A pandas dataframe ordered in the same order as dataframe containing twelve-digit codes -- as a string -- denoting a neighborhood-sized region in the United States.
 		"""
 
 		dataframe.to_csv("temp_addresses_frame.csv", index=False, header=None)
@@ -375,7 +385,9 @@ class Census:
 		print("Successfully geocoded {}% of {} passed addresses.".format(succesfully_merged, len(df)))
 		print("Of successfully matched addresses, {}% were exact matches".format(exact_matches))
 
-		return(to_return['geocode'])
+		geocodes = to_return['geocode']
+
+		return(geocodes)
 
 	def get_geocode_for_address(address, city, state_code):
 		"""
@@ -388,19 +400,12 @@ class Census:
 		We use the JSON response here to form GEOID as follows with COMPONENTS[LENGTH]: STATE[2] + COUNTY[3] + TRACT[6] + BLOCK GROUP[1] = GEOID[12]
 
 		Parameters:
-		-----------
-		address : str
-			Street address e.g. "42 Zaphod Beeblebrox Avenue"
+			address    : str, street address e.g. "42 Zaphod Beeblebrox Avenue"
+			city       : str, city name e.g. "Prefectville"
+			state_code : str, two-digit state postal code e.g.: "CA" or "NY"
 
-		city : str
-			City name e.g. "Prefectville"
-
-		state_code : str
-			Two-digit state postal code e.g.: "CA" or "NY"
-
-		Returns
-		-------
-		A twelve-digit code -- as a string -- denoting a neighborhood-sized region in the United States.
+		Returns:
+			geocode    : A twelve-digit code -- as a string -- denoting a neighborhood-sized region in the United States.
 		"""
 
 		url = "https://geocoding.geo.census.gov/geocoder/geographies/address?street={}&city={}&state={}&benchmark=9&format=json&vintage=Census2010_Census2010".format(address, city, state_code)
@@ -419,7 +424,8 @@ class Census:
 			first_address_match_geographies = first_address_match['geographies']
 			tract_geoid = str(first_address_match_geographies['Census Tracts'][0]['GEOID'])
 			block_group = str(first_address_match_geographies['Census Blocks'][0]['BLKGRP'])
-			return "{}{}".format(tract_geoid, block_group)
+			geocode = "{}{}".format(tract_geoid, block_group)
+			return(geocode)
 		except Exception as e:
 			#print(response_parsed)
 			print("EXCEPTION: Couldn't access vital response elements in geocode API response:\n 	{}".format(e))
