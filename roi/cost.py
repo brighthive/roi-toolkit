@@ -15,10 +15,10 @@ class Compound_Interest_Loan:
 		The method is period-agnostic. It can take years, months, semesters -- as long as all parameters reflect this unit.
 
 		Parameters:
-			principal			:	The amount borrowed, e.g. 
-			loan				:	The interest rate, e.g. 5% = 0.05 per period.
-			duration			:	The number of periods over which we are calculalating, e.g. 30 periods for a 30 year 
-			n_periods_passed 	:	The number of periods since the principal was borrowed.
+			principal           :   The amount borrowed, e.g. 
+			rate                :   The interest rate, e.g. 5% = 0.05 per period.
+			duration            :   The number of periods over which we are calculalating, e.g. 30 periods for a 30 year 
+			n_periods_passed    :   The number of periods since the principal was borrowed.
 
 		Returns:
 			balance_remaining 	: The full amount the borrower will pay until the term of the loan is over, INCLUDING INTEREST
@@ -37,9 +37,9 @@ class Compound_Interest_Loan:
 		2) The borrower pays for -duration- periods, and does not owe afterward.
 
 		Parameters:
-			principal		:	The amount borrowed, e.g. 
-			rate			:	The interest rate, e.g. 5% = 0.05 per period.
-			duration		:	The number of periods over which we are calculalating, e.g. 30 periods for a 30 year 
+			principal       :   The amount borrowed, e.g. 
+			rate            :   The interest rate, e.g. 5% = 0.05 per period.
+			duration        :   The number of periods over which we are calculalating, e.g. 30 periods for a 30 year 
 
 		Returns:
 			period_payment 	:	The amount owed by the borrower each period, including interest
@@ -54,12 +54,12 @@ class Compound_Interest_Loan:
 		Calculates how long it will take to pay off a loan under the prevailing conditions.
 
 		Parameters:
-			current_balance		:	The amount currently owed by the borrower, not including future interest
-			rate 				:	The interest rate, e.g. 5% = 0.05 per period.
-			payment_amount		:	The amount the borrower intends or is able to pay 
+			current_balance     :   The amount currently owed by the borrower, not including future interest
+			rate                :   The interest rate, e.g. 5% = 0.05 per period.
+			payment_amount      :   The amount the borrower intends or is able to pay 
 
 		Returns:
-			periods 			:	Number of periods until the loan is fully paid (zero balance)
+			periods             :   Number of periods until the loan is fully paid (zero balance)
 		"""
 		numerator = -1 * np.log(1 - (rate*current_balance/payment_amount))
 		denominator = np.log(1 + rate)

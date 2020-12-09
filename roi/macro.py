@@ -35,12 +35,12 @@ class BLS_Ops:
 		Present year is defined as the latest year of available CPI indices in the data packaged with the ROI Toolkit.
 
 		Parameters:
-			frame_				:	A pandas DataFrame
-			year_column_name	:	The name of the column in frame_ that contains years
-			value_column_name	:	The name of the column in frame_ that contains values
+			frame_              :   A pandas DataFrame
+			year_column_name    :   The name of the column in frame_ that contains years
+			value_column_name   :   The name of the column in frame_ that contains values
 
 		Returns:
-			adjusted_column		:	A pandas Series containing CPI-adjusted values of value_column_name
+			adjusted_column     :   A pandas Series containing CPI-adjusted values of value_column_name
 
 		"""
 		max_year_row = self.cpi_adjustments.loc[self.cpi_adjustments['year'] == self.cpi_adjustments['year'].max()].iloc[0] # get latest year of CPI data
@@ -81,11 +81,11 @@ class BLS_Ops:
 		For example, if the factor is 1.5, then $100 in start_year is equivalent to $150 in end-year.
 
 		Parameters:
-			start_year			:	Year FROM which the analyst is converting - YYYY numeric scalar
-			end_year			:	year TO which the analyst is converting - YYYY numeric scalar
+			start_year          :   Year FROM which the analyst is converting - YYYY numeric scalar
+			end_year            :   Year TO which the analyst is converting - YYYY numeric scalar
 
 		Returns:
-			adjustment_factor	: A scalar adjustment factor allowing conversion for inflation
+			adjustment_factor   :   A scalar adjustment factor allowing conversion for inflation
 
 		"""
 
@@ -100,24 +100,42 @@ class BLS_Ops:
 		adjustment_factor = end_CPI / start_CPI
 		return(adjustment_factor)
 
-	def employment_change(self, state_code, start_month, end_month):
+	def employment_change(self, frame_, state_code_column_name, start_month_column_name, end_month_column_name):
 		"""
-		This function takes PD series.
+		This method takes a dataframe and three column names. Each row in the provided dataframe should correspond
+		to a unique individual. The idea of this function is to, for each individual, provide the overall change
+		in the employment rate in the state and over the time period provided.
 
-		This function takes year/month YYYY-MM as datetime arguments to avoid false precision.
-		It fetches the associated figures from the BLS statistics provided as a function argument for
-		the first of the month provided.
+		This function takes year/month YYYY-MM as datetime arguments to avoid false precision. So, for example,
+		a row might have the state as "AK", start_month as "2010-10" and end_month as "2012-05. For this individual,
+		the function will return the change in the overall employment rate in Alaska over the provided time period.
 
-		BLS APIs return monthly data
+		The idea here is to provide a way of simply quickly correcting for macroeconomic changes. If the employment rate
+		for graduates of a program is 95% after they graduated, and if only 90% were employed prior to entry, a naive comparison
+		might suggest that the program increases odds of employment by 5 percentage points. However, if the average change in employment
+		over these individuals' periods of participation was an increase in 10%, then you might conclude that the program is actually
+		hurting their chances of employment by reducing them 5 percentage points.
+
+		Please note that this is itself a naive reading: employment figures are calculated for the population at large, and program
+		participants are not likely to be a representative subsample. However, correcting for macroeconomic trends in this way is
+		an important first step in interpreting data about program completers.
+
+		Please note as well that the employment rate here is given, as is typical with conventional calculations of the UNEMPLOYMENT
+		rate, as a percentage of the total labor force, not of the working-age population at large.
 
 		Parameters:
-		-----------
+			frame_                        :   A pandas dataframe containing one row per individual
+			state_code_column_name        :   The name of a column containing two-character state codes, e.g. "CO"
+			start_month_column_name       :   The name of a column containing start months of format "YYYY-MM"
+			end_month_column_name         :   The name of a column containing end months of format "YYYY-MM"
 
-
-		Returns
-		-------
-		A single number indicating the employment change over the given period
+		Returns:
+			percent_employed_change       :   A pandas series describing the change in the overall employment rate in the location and over the time period listed for each individual in the dataset
 		"""
+
+		state_code = frame_[state_code_column_name]
+		start_month = frame_[start_month_column_name]
+		end_month = frame_[end_month_column_name]
 
 		# check state codes
 		all_state_codes = state_code.unique()
@@ -142,15 +160,45 @@ class BLS_Ops:
 
 	def wage_change(self, state_code, start_month, end_month, convert=False):
 		"""
+		This method takes a dataframe and three column names. Each row in the provided dataframe should correspond
+		to a unique individual. The idea of this function is to, for each individual, provide the overall change
+		in the average wage in the state and over the time period provided.
+
+		This function takes year/month YYYY-MM as datetime arguments to avoid false precision. So, for example,
+		a row might have the state as "AK", start_month as "2010-10" and end_month as "2012-05. For this individual,
+		the function will return the change in the overall employment rate in Alaska over the provided time period.
+
+		The idea here is to provide a way of simply quickly correcting for macroeconomic changes. If the average wage
+		for graduates of a program is $50k after they graduated, and if the average ewage was $45k prior to entry, a naive comparison
+		might suggest that the program increases odds of employment by $5k. However, if the average wage change over
+		these individuals' periods of participation was an increase in $10k, then you might conclude that the program is actually
+		hurting their earnings by approximately $5k.
+
+		Please note that this is itself a naive reading: employment figures are calculated for the population at large, and program
+		participants are not likely to be a representative subsample. However, correcting for macroeconomic trends in this way is
+		an important first step in interpreting data about program completers.
+
+		Please note as well that this method uses a "naive" method for calculating annual wages, taking weekly BLS wage data and multiplying by 52.
 
 		Parameters:
-		-----------
+			frame_                        :   A pandas dataframe containing one row per individual
+			state_code_column_name        :   The name of a column containing two-character state codes, e.g. "CO"
+			start_month_column_name       :   The name of a column containing start months of format "YYYY-MM"
+			end_month_column_name         :   The name of a column containing end months of format "YYYY-MM"
 
-
-		Returns
-		-------
-		A single number indicating the wage change over the given period
+		Returns:
+			wage_change       :   A pandas series describing the change in the overall wage cjange in the location and over the time period listed for each individual in the dataset
 		"""
+
+		state_code = frame_[state_code_column_name]
+		start_month = frame_[start_month_column_name]
+		end_month = frame_[end_month_column_name]
+
+		# check state codes
+		all_state_codes = state_code.unique()
+		unmerged_state_codes = set(all_state_codes).difference(set(utilities.Data.state_crosswalk.keys()))
+		if len(unmerged_state_codes) > 0:
+			warnings.warn("Series passed as argument state_code contains invalid values for state codes. Please refer to https://www.bls.gov/respondents/mwr/electronic-data-interchange/appendix-d-usps-state-abbreviations-and-fips-codes.htm for valid codes.")
 
 		temp_frame = pd.DataFrame({'start_month':start_month,'end_month':end_month,'state_code':state_code})
 
