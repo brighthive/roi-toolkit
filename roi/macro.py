@@ -32,13 +32,15 @@ class BLS_Ops:
 	def adjust_to_current_dollars(self, frame_, year_column_name, value_column_name):
 		"""
 		Given a dataframe with a year column and a column of values, this method will adjust all values to present-year dollars.
+		Present year is defined as the latest year of available CPI indices in the data packaged with the ROI Toolkit.
 
 		Parameters:
 			frame_				:	A pandas DataFrame
-			year_column_name	:	The name of a column 
-			value_column_name
+			year_column_name	:	The name of the column in frame_ that contains years
+			value_column_name	:	The name of the column in frame_ that contains values
 
 		Returns:
+			adjusted_column		:	A pandas Series containing CPI-adjusted values of value_column_name
 
 		"""
 		max_year_row = self.cpi_adjustments.loc[self.cpi_adjustments['year'] == self.cpi_adjustments['year'].max()].iloc[0] # get latest year of CPI data
@@ -74,6 +76,18 @@ class BLS_Ops:
 		return(adjusted_column)
 
 	def get_single_year_adjustment_factor(self, start_year, end_year):
+		"""
+		Provides the adjustment factor required in order to convert dollar values from start_year to dollar_values from end_year.
+		For example, if the factor is 1.5, then $100 in start_year is equivalent to $150 in end-year.
+
+		Parameters:
+			start_year			:	Year FROM which the analyst is converting - YYYY numeric scalar
+			end_year			:	year TO which the analyst is converting - YYYY numeric scalar
+
+		Returns:
+			adjustment_factor	: A scalar adjustment factor allowing conversion for inflation
+
+		"""
 
 		# validation
 		if not isinstance(start_year, int) or not isinstance(end_year, int):
@@ -83,7 +97,8 @@ class BLS_Ops:
 
 		end_CPI = self.cpi_adjustments.loc[self.cpi_adjustments['year'] == end_year, 'cpi'].iloc[0] # get latest year of CPI data
 		start_CPI = self.cpi_adjustments.loc[self.cpi_adjustments['year'] == start_year, 'cpi'].iloc[0] # get latest year of CPI data
-		return(end_CPI / start_CPI)
+		adjustment_factor = end_CPI / start_CPI
+		return(adjustment_factor)
 
 	def employment_change(self, state_code, start_month, end_month):
 		"""

@@ -49,18 +49,18 @@ class Metric():
 	This is equity Metric() parent class from which all the equity child metric classes inherit.
 
 	Parameters:
-		unique_groups	:	A numpy array containing the names or values of different groups within a population e.g. np.array(['Men','Women'])
-		grouped_values	:	A list of numpy arrays, each of which contains values for one and only one group. This list should be ordered according
+		unique_groups           :   A numpy array containing the names or values of different groups within a population e.g. np.array(['Men','Women'])
+		grouped_values          :   A list of numpy arrays, each of which contains values for one and only one group. This list should be ordered according
 							to the value of unique_groups (above), e.g. [np.array([values for men]), np.array(values for women)]
 
 	Attributes:
-		unique_groups			:	The value passed as an argument for unique_groups
-		grouped_values			:	The value passed as an argument for grouped_values
-		ungrouped_observations	:	A single numpy array of all observations, ordered by group
-		n_groups				:	The number of unique groups passed in unique_groups
-		n						:	The number of values across all groups
-		viz						:	A Seaborn boxplot offering a simple visualization of cross-group variation
-		nans					:	The number of NaN values passed to the class
+		unique_groups           :   The value passed as an argument for unique_groups
+		grouped_values          :   The value passed as an argument for grouped_values
+		ungrouped_observations  :   A single numpy array of all observations, ordered by group
+		n_groups                :   The number of unique groups passed in unique_groups
+		n                       :   The number of values across all groups
+		viz                     :   A Seaborn boxplot offering a simple visualization of cross-group variation
+		nans                    :   The number of NaN values passed to the class
 
 	"""
 	def __init__(self, unique_groups, grouped_values):
