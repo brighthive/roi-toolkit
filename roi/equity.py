@@ -50,8 +50,7 @@ class Metric():
 
 	Parameters:
 		unique_groups           :   A numpy array containing the names or values of different groups within a population e.g. np.array(['Men','Women'])
-		grouped_values          :   A list of numpy arrays, each of which contains values for one and only one group. This list should be ordered according
-							to the value of unique_groups (above), e.g. [np.array([values for men]), np.array(values for women)]
+		grouped_values          :   A list of numpy arrays, each of which contains values for one and only one group. This list should be ordered according to the value of unique_groups (above), e.g. [np.array([values for men]), np.array(values for women)]
 
 	Attributes:
 		unique_groups           :   The value passed as an argument for unique_groups
@@ -84,10 +83,10 @@ class Metric():
 		This factory method allows us to pass a dataframe directly to any equity metric class instead of having to create numpy arrays from it
 
 		Parameters:
-			frame			:	A dataframe
-			group_columns	:	The name of the column that denotes groups, or a list of columns on which to group
-			value_column	:	The name of the column that contains values to be analyzed
-			sample			:	If False, will use the whole dataset. Otherwise, should be a number denoting the size of the sample to take. Defaults to False.
+			frame           :   A dataframe
+			group_columns   :   The name of the column that denotes groups, or a list of columns on which to group
+			value_column    :   The name of the column that contains values to be analyzed
+			sample          :   If False, will use the whole dataset. Otherwise, should be a number denoting the size of the sample to take. Defaults to False.
 		"""
 		if sample != False:
 			warnings.warn("When sample == True, Metric() will use the value of sample to create a random subset of values that it will use for all calculations. This number will be stored as attribute .samplesize.")
@@ -106,12 +105,11 @@ class Metric():
 		This produces a box plot that allows the analyst to quickly and visually assess differences betweenb groups
 
 		Parameters:
-			unique_groups	:	A numpy array containing the names or values of different groups within a population e.g. np.array(['Men','Women'])
-			grouped_values	:	A list of numpy arrays, each of which contains values for one and only one group. This list should be ordered according
-								to the value of unique_groups (above), e.g. [np.array([values for men]), np.array(values for women)]
+			unique_groups   :   A numpy array containing the names or values of different groups within a population e.g. np.array(['Men','Women'])
+			grouped_values  :   A list of numpy arrays, each of which contains values for one and only one group. This list should be ordered according to the value of unique_groups (above), e.g. [np.array([values for men]), np.array(values for women)]
 
 		Return:
-			fig				:	A complete Seaborn boxplot that can be displayed or saved to disk
+			fig             :   A complete Seaborn boxplot that can be displayed or saved to disk
 
 		"""
 		x = np.array(grouped_values)
@@ -166,19 +164,13 @@ class Theil_T(Metric):
 		s_i in the Theil index expression
 		
 		Parameters:
-		-----------
-		array : numpy vector or array
-			Values of variable
+			array : numpy vector or array of values
+			N     : size of population
+			mu    : float, average value of variable across population
 
-		N : float
-			size of population
+		Returns:
+			s_i   : s_i in the Theil T index expression
 
-		mu : float
-			Average value of variable across population
-
-		Returns
-		-------
-		Float
 		"""
 		N_i = len(array)
 		x_i_bar = np.nanmean(array)
@@ -191,13 +183,10 @@ class Theil_T(Metric):
 		First term (sum of within-group inequalities) in the Theil index formula
 		
 		Parameters:
-		-----------
-		list_of_groups : list of numpy arrays
-			Array[N] of arrays representing N subgroups
+			list_of_groups : list of numpy arrays, array[N] of arrays representing N subgroups
 
-		Returns
-		-------
-		Scalar representing the first term value of the Theil index formula
+		Returns:
+			first_term     : Scalar representing the first term value of the Theil index formula
 		"""
 		full_population = np.concatenate(list_of_groups)
 		N = len(full_population)
@@ -213,13 +202,10 @@ class Theil_T(Metric):
 		Second term (sum of cross-group inequalities) in the Theil index formula
 		
 		Parameters:
-		-----------
-		array_of_groups : numpy multidimensional vector
-			Array[N] of arrays representing N subgroups
+			array_of_groups : numpy multidimensional vector, Array[N] of arrays representing N subgroups
 
-		Returns
-		-------
-		Scalar representing the second term value of the Theil index formula
+		Returns:
+			second_term     : Scalar representing the second term value of the Theil index formula
 		"""
 		full_population = np.concatenate(list_of_groups)
 		N = len(full_population)
@@ -236,7 +222,7 @@ class Theil_L(Metric):
 	positive values, which makes it unsuitable for assessing inequality across values that may take any
 	value across the entire real line (e.g. net worth, or any kind of difference).
 
-	Relative to the Theil L, the Theil T metric is sensitive to changes at the top end of the distribution.
+	Relative to the Theil T, the Theil L metric is sensitive to changes at the lower end of the distribution.
 
 	"""
 	def calculate(self):
@@ -253,8 +239,11 @@ class Theil_L(Metric):
 		"""
 		T_i in the Theil index expression
 		
-		Parameter - Numpy vector or array of values
-		Returns - Scalar (float)
+		Parameter:
+			vector_of_values : Numpy vector or array of values
+
+		Returns:
+			theil            : Within-group Theil L, Scalar (float)
 
 		"""
 		x = vector_of_values # for readability
@@ -271,19 +260,12 @@ class Theil_L(Metric):
 		s_i in the Theil index expression
 		
 		Parameters:
-		-----------
-		array : numpy vector or array
-			Values of variable
+			array : numpy vector or array, Values of variable
+			N     : float, size of population
+			mu    : float, average value of variable across population
 
-		N : float
-			size of population
-
-		mu : float
-			Average value of variable across population
-
-		Returns
-		-------
-		Float
+		Returns:
+			s_i   : s_i in the Theil index formula
 		"""
 		N_i = len(array)
 		s_i = (N_i/N)
@@ -295,13 +277,10 @@ class Theil_L(Metric):
 		First term (sum of within-group inequalities) in the Theil index formula
 		
 		Parameters:
-		-----------
-		list_of_groups : list of numpy arrays
-			Array[N] of arrays representing N subgroups
+			list_of_groups : list of numpy arrays, array[N] of arrays representing N subgroups
 
-		Returns
-		-------
-		Scalar representing the first term value of the Theil index formula
+		Returns:
+			first_term     : Scalar representing the first term value of the Theil index formula
 		"""
 		full_population = np.concatenate(list_of_groups)
 		N = len(full_population)
@@ -317,13 +296,10 @@ class Theil_L(Metric):
 		Second term (sum of cross-group inequalities) in the Theil index formula
 		
 		Parameters:
-		-----------
-		array_of_groups : numpy multidimensional vector
-			Array[N] of arrays representing N subgroups
+			array_of_groups : numpy multidimensional vector, Array[N] of arrays representing N subgroups
 
-		Returns
-		-------
-		Scalar representing the second term value of the Theil index formula
+		Returns:
+			second_term     : Scalar representing the second term value of the Theil index formula
 		"""
 		full_population = np.concatenate(list_of_groups)
 		N = len(full_population)
@@ -357,11 +333,11 @@ class Variance_Analysis(Metric):
 	def variance_within(array_of_values, n):
 		"""
 		Parameters:
-			array_of_values			:	A list of numpy arrays, each of which contains values for a particular group
-			n						:	The total number of values/observations across all groups (should be identical to np.concatenate(array_of_values).size)
+			array_of_values         :   list of numpy arrays, each of which contains values for a particular group
+			n                       :   The total number of values/observations across all groups (should be identical to np.concatenate(array_of_values).size)
 
 		Returns:
-			within_group_variance	:	A scalar identifying the total within-group variance in tha dataset
+			within_group_variance   :   A scalar identifying the total within-group variance in tha dataset
 
 		"""
 		group_variances = [np.nanvar(group) for group in array_of_values]
@@ -373,10 +349,10 @@ class Variance_Analysis(Metric):
 	def variance_between(array_of_values):
 		"""
 		Parameters:
-			array_of_values			:	A list of numpy arrays, each of which contains values for a particular group
+			array_of_values         :   A list of numpy arrays, each of which contains values for a particular group
 
 		Returns:
-			within_group_variance	:	A scalar identifying the total between-group variance in tha dataset
+			within_group_variance   :   A scalar identifying the total between-group variance in tha dataset
 
 		"""
 		within_group_means = [np.nanmean(group) for group in array_of_values]
@@ -390,10 +366,10 @@ class Variance_Analysis(Metric):
 		within-group variance plus between-group variance for any dataset.
 
 		Parameters:
-			observations			:	A single numpy array
+			observations            :   A single numpy array
 
 		Returns:
-			total_variance			:	A scalar identifying the total variance of the provided values
+			total_variance          :   A scalar identifying the total variance of the provided values
 
 		"""
 		total_variance = np.nanvar(observations)
@@ -425,10 +401,10 @@ class Gini(Metric):
 		representing all value accruing to a single individual.
 
 		Parameters:
-			array_of_values		:	A numpy array of numeric values
+			array_of_values     :   A numpy array of numeric values
 
 		Returns:
-			G_within			:	Within-group Gini
+			G_within            :   Within-group Gini
 
 		"""
 		ungrouped_observations = np.concatenate(array_of_values).flatten()
@@ -447,10 +423,10 @@ class Gini(Metric):
 		a simple measure of the dispersal of group means.
 
 		Parameters:
-			array_of_values		:	A list of numpy arrays, each containing values for a particular group
+			array_of_values     :   A list of numpy arrays, each containing values for a particular group
 
 		Returns:
-			G_between			:	Between-group Gini
+			G_between           :   Between-group Gini
 		"""
 		means_replaced = np.concatenate([np.repeat(np.nanmean(group), len(group)) for group in array_of_values])
 		G_between = Gini.gini(means_replaced)	
@@ -462,10 +438,10 @@ class Gini(Metric):
 		Given an array of values of any type, calculates the Gini index.
 
 		Parameters:
-			values	:	A numpy array
+			values  :   A numpy array
 
 		Returns:
-			G		:	The value of the Gini coefficient for the provided values
+			G       :   The value of the Gini coefficient for the provided values
 		"""
 		n = len(values)
 		xbar = np.nanmean(values)
@@ -502,16 +478,10 @@ class ADI(object):
 	def get_quintile_for_geocode(self, fips_geocode):
 		"""
 		Parameters:
-		-----------
-		fips_geocode : str
-			Twelve-digit FIPS code
+			fips_geocode : str, Twelve-digit FIPS code
 
-		adi_frame : Pandas DataFrame
-			ADI Dataframe produced above in ADI.get_adi_frame()
-
-		Returns
-		-------
-		A single string value such as "0-20" denoting the deprivation percentile of the provided block group.
+		Returns:
+			slice_       : A single string value such as "0-20" denoting the deprivation percentile of the provided block group.
 		"""
 		slice_ = self.adi_frame.loc[self.adi_frame.fips == fips_geocode, 'adi_quintile'].iat[0]
 		return(slice_)
@@ -519,16 +489,11 @@ class ADI(object):
 	def get_quintile_for_geocodes_frame(self, dataframe, geocode_column_name):
 		"""
 		Parameters:
-		-----------
-		dataframe : Pandas Dataframe
-			Dataframe with a column containing geocode
+			dataframe           : Pandas Dataframe, dataframe with a column containing geocode
+			geocode_column_name : str, name of column in dataframe containing geocodes
 
-		geocode_column_name : str
-			Name of column in dataframe containing geocodes
-
-		Returns
-		-------
-		The original dataframe with an "adi_quintile" column containing the ADI quintile.
+		Returns:
+			geocode_quintiles_array : A numpuy array the ADI quintiles for dataframe[geocode_column_name].
 
 		Notes
 		-------
@@ -550,5 +515,7 @@ class ADI(object):
 		del geocodes_merged['_merge']
 		del geocodes_merged['fips']
 
-		return(geocodes_merged['adi_quintile'].to_numpy())
+		geocode_quintiles_array = geocodes_merged['adi_quintile'].to_numpy()
+
+		return(geocode_quintiles_array)
 
