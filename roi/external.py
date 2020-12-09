@@ -432,8 +432,27 @@ class Census:
 			return ""
 
 
-def fetch_bls_data(start_year, end_year):
-	bls = BLS_API()
+def fetch_bls_data(start_year, end_year, bls_api_key=None):
+	"""
+	This is a very important function! When run, fetch_bls_data() will fetch employment, labor force, wage and inflation
+	time series from the BLS for all years in the range start_year:end_year and for all states in the U.S.
+
+	Once this is done, it will save them to disk as CSVs (for human-readability). Having these datasets saved on disk
+	is necessary for using any of the methods in the macro submodule. There are two groups of people who should execute this function:
+
+	(1) Maintainers of the roi-toolkit repo, who should run it in order to keep the repo updated with the latest data, which is packaged with the module
+	(2) Any user of the repo who wants to replace the data that is packaged with it with more up-to-date statistics.
+
+	File locations are located in settings.py
+
+	Parameters:
+		start_year   :   Start year YYYY
+		end_year     :   End year   YYYY
+
+	Returns:
+		None
+	"""
+	bls = BLS_API(bls_api_key)
 	
 	# set up data frames
 	employment_dataframe = pd.DataFrame()
