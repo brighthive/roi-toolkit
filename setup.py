@@ -9,8 +9,7 @@ import numpy as np
 
 if __name__ == "__main__":
 
-	#fetch_bls_data(start_year = 2002, end_year = 2019)
-
+	fetch_bls_data(start_year = 2002, end_year = 2019)
 	cps = surveys.CPS_Ops()
 	model = cps.fit_mincer_model()
 	exit()
