@@ -493,7 +493,7 @@ class ADI(object):
 			geocode_column_name : str, name of column in dataframe containing geocodes
 
 		Returns:
-			geocode_quintiles_array : A numpuy array the ADI quintiles for dataframe[geocode_column_name].
+			geocode_quintiles_array : A numpy array the ADI quintiles for dataframe[geocode_column_name].
 
 		Notes
 		-------
