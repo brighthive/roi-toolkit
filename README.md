@@ -14,7 +14,7 @@ Students and workers of all ages in America desperately need greater transparenc
 
 The Toolkit is **open-source**. It can be forked or cloned by anyone. Moreover, pull requests can be submitted to the Toolkit's maintainers to fix bugs or add additional metrics or functionalities. Please note that use of the Toolkit does not imply BrightHive's endorsement of the setting or particular use of the calculated metrics.
 
-## Principles
+# Principles
 
 The following are principles that guided the development of the ROI Toolkit and that should be kept in mind by users and future contributors.
 
@@ -22,20 +22,35 @@ The following are principles that guided the development of the ROI Toolkit and 
 
     Metrics need to be easily understood by their users. Complexity reduces usability, and though some informative metrics are unavoidably “black box” for users without statistical training, we strive to make sure that recommended metrics are explainable to their potential users. Metrics should be easily interpretable for all stakeholders.
 
-
-* **Replicability**
-
-    Metrics should be replicability both across time and across different geographic locales. Variables necessary for metric calculation should be reliably available for the foreseeable future, and there should be a reasonable expectation that these variables will be available in other future locations.
-
-
 * **Statistical Validity**
 
-    Metrics should defensibly represent the real-world quantities they claim to measure. Though perfect statistical rigor may not be possible, we try to formulate metrics that reliably estimate the underlying phenomena they exist to represent.
-
+    Metrics should defensibly estimate the real-world quantities they claim to measure. Though perfect statistical rigor may not be possible, we try to formulate metrics that reliably estimate the underlying phenomena they exist to represent.
 
 * **Likely actual use**
 
-    The deployment of the resulting ROI metrics will drive behavior change across their user base. We formulate metrics bearing in mind that measures developed using past data will be used to drive changes in the distribution of future data, and try to select metrics which are likely to result in positive behavior change, and which are robust in the face of differing institutional incentives. We are mindful of [Goodhart's Law](https://en.wikipedia.org/wiki/Goodhart%27s_law) and [Campbell's Law](https://en.wikipedia.org/wiki/Campbell%27s_law).
+    The deployment of ROI metrics will drive behavior change across their user base. We formulate metrics bearing in mind that measures developed using past data will be used to drive changes in the distribution of future data, and aim to select metrics which are likely to result in positive behavior change, and which are robust in the face of differing institutional incentives. We are mindful of [Goodhart's Law](https://en.wikipedia.org/wiki/Goodhart%27s_law) and [Campbell's Law](https://en.wikipedia.org/wiki/Campbell%27s_law).
+
+# ROI Toolkit Quickstart
+
+The meat of this module is in the roi subdirectory. Clone the repo, copy the roi directory to your project, and get started.
+
+# For maintainers
+
+In addition to code, the module itself also ships with prepackaged data that is collected from the Bureau of Labor Statistics and structured. Maintainers can keep this data up to date by regularly running `setup.py`, which sits in the top level of this repo. This script fetches employment, labor force, wage, and inflation data from the Bureau of Labor Statistics' API, does some work on it, and saves it to a data directory within the module (the `roi` subdirectory) itself.
+
+* In order to run `setup.py`, maintainers (and any user who wants to clone the whole repo and update the data) must have a key to the [BLS API](https://www.bls.gov/bls/api_features.htm), which should be stored as an environment variable named `BLS_API_KEY`.
+
+* Maintainers will also need to manually download an extract of CPS data for (at most) the past twenty years. They can do so at [IPUMS](https://cps.ipums.org/cps/). This extract is used to produce summary data that is shipped with the module, and is necessary for fitting the Mincer model that is used to calculate earnings premiums in the `metrics` submodule. CPS extracts should be placed in the data folder, have their filepaths updated in `settings.File_Locations.cps_toplevel_extract`, and must contain the following variables:
+	* `AGE`
+	* `EDUC`
+	* `INCTOT`
+	* `INCWAGE`
+	* `CPI99`
+	* `YEAR`
+	* `STATEFIP`
+	* `ASECWT`
+
+* Finally, maintainers should dowwnload a copy of the [Area Deprivation Index](https://www.neighborhoodatlas.medicine.wisc.edu/) block group-level data and place it in the `roi/data` subdirectory of this repo so that it will ship withe module, and update its filepath in `Settings.File_Locations.adi_location`.
 
 
 ### Background
