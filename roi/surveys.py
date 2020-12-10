@@ -6,12 +6,53 @@ import statsmodels.api as sm
 import statsmodels.formula.api as smf
 import pickle
 
+"""
+This submodule contains classes and methods for working with data from surveys and for fitting models on that data.
+As of this writing (12/09/2020), the only survey supported is the Current Population Survey (CPS).
+
+See https://www.census.gov/programs-surveys/cps.html for details on the survey
+See http://cps.ipums.org/ in order to download data.
+
+Unfortunately, CPS microdata must be downloaded manually, and placed at the location specified in settings.File_Locations.cps_toplevel_extract.
+Dowmloading up to 20 years of CPS data is recommended. Using more is not recommended, since a Mincer model fit to the data in this submodule
+and since structural changes affecting the parameters yielded by this model may occur on longer timescales.
+
+Because the CPS data is downloaded manually, repository maintainers or sophisticated users must ensure that their extract includes the following variables:
+AGE
+EDUC
+INCTOT
+INCWAGE
+CPI99
+YEAR
+STATEFIP
+ASECWT
+
+For details on educatino codes, please visit https://cps.ipums.org/cps-action/variables/EDUC#codes_section
+
+
+"""
+
 class CPS_Ops(object):
 	"""
 	On init, this object reads in a CPS extract, calculates mean wages by age group across the whole population and for those whose
 	highest level of education his high school, and sets properties of the class to dataframes with those contents.
 	The class also offers functions for using this data to calculate average wage change across years, both given a single data point and
 	given a data given multiple time periods, age groups, etc.
+
+	Parameters:
+		None
+
+	Attributes:
+		base_year             :   The base year to which all dollar amounts will be converted. Defaults to the last year before the current year
+		microdata             :   The microdata read in from the CPS extract, with the following derived columns:
+			            age_group              :  Uses AGE variable to bucket individuals into five age categories
+			            hs_education_at_most   :  A dummy variable that takes the value 1 if an individual has at most a high school education and 0 otherwise
+			            INCTOT_current         :  INCOT in current-year dollars
+			            INCWAGE_current        :  INCWAGE in ciurrent-year dollars
+		bls                   :   An instance of macro.BLS_Ops(), which is needed in order to do inflation corrections
+		cpi_adjustment_factor :   The CPI adjustment factor for converting 1999 dollars into current-year dollars
+		hs_grads_only         :   The subset of microdata containing only those with a maximum high-school education
+
 	"""
 	def __init__(self):
 		self.base_year = date.today().year - 1
@@ -35,52 +76,79 @@ class CPS_Ops(object):
 		self.hs_grads_only = self.microdata[self.microdata.hs_education_at_most == True]
 		self.get_all_mean_wages()
 		self.get_hs_grads_mean_wages()
-		self.get_cpi_adjustment_range()
 
 	def get_all_mean_wages(self):
-		# Return a dataframe containing mean wages by year, state and age group
+		"""
+		Returns a dataframe containing mean wages by year, state and age group
+		"""
 		mean_wages = self.microdata.groupby(['YEAR','STATEFIP','age_group']).apply(lambda x: pd.Series({"mean_INCWAGE":np.sum(x['INCWAGE_current'] * x['ASECWT'])/np.sum(x['ASECWT'])})).reset_index()
 		self.all_mean_wages = mean_wages
 		mean_wages.to_csv("{}/mean_wages.csv".format(settings.File_Locations.local_data_directory), index=False)
 		return None
 
 	def get_hs_grads_mean_wages(self):
-		# Return a dataframe containing mean wages for high school graduates (maximum ed) by year, state and age group
+		"""
+		Returns a dataframe containing mean wages for high school graduates (maximum ed) by year, state and age group
+		"""
 		mean_wages = self.hs_grads_only.groupby(['YEAR','STATEFIP','age_group']).apply(lambda x: pd.Series({"mean_INCWAGE":np.sum(x['INCWAGE_current'] * x['ASECWT'])/np.sum(x['ASECWT'])})).reset_index()
 		self.hs_grads_mean_wages = mean_wages
 		mean_wages.to_csv("{}/hs_grads_mean_wages.csv".format(settings.File_Locations.local_data_directory), index=False)
 		return None
 
-	# TODO: Unconnect this from the internet?
-	def get_cpi_adjustment_range(self):
-		bls_api = external.BLS_API()
-		cpi_range = bls_api.get_cpi_adjustment_range(self.base_year - 19, self.base_year) # need to be connected to the internet to fetch BLS data
-		cpi_range.to_csv("{}/cpi_adjustment_range.csv".format(settings.File_Locations.local_data_directory), index=False)
-		return None
 
-	def get_mean_wage_by_ed_level(self, prereq_educ_level, program_educ_level, statefip):
+	def get_mean_wage_by_ed_level(self, prereq_educ_level, program_educ_level, statefip, year = None, data = None):
 		"""
-		Calculate mean wages for individuals in a given state who are above a certain education level but below another one. Currently calculated for 2019 only.
-		Reference:
-		-----------
-		CPS education codes
+		Calculate mean wages for individuals in a given state who are above a certain education level but below another one. Currently calculated for base year only.
+		Please refer to https://cps.ipums.org/cps-action/variables/EDUC#codes_section for details on education codes
+
+		The idea here is that an analyst may want to naively compare the raw average wage for program completers with the raw average wage for those who satisfy the
+		prereq_educ_level for a given program but have not yet satisfied completed the level of education offered by the program (program_educ_level).
+
+		This CAN NOT be used for causal attribution: composition effects of individaul training programs likely swamp any causal effects in most cases.
+		HOWEVER, this method can be used in a more sophisticated way by passing a subset of self.microdata as the data argument. Analysts can use this
+		method as part of a function that matches program participants against counterfactual wages by education, age group, and more.
+
+
 		Parameters:
-		-----------
-		prereq_educ_level : str
-			CPS education recode code for the lower-bound education level
-		program_educ_level : str
-			CPS education recode code for the upper-bound education level
-		statefip : str
-			End year and month of the period over which we want to identify $ wage change
-		Returns
-		-------
-		A single number indicating the mean wage across the dataset for this group of people.
+			prereq_educ_level   : str, CPS education recode code for the lower-bound education level
+			program_educ_level  : str, CPS education recode code for the upper-bound education level
+			statefip            : str, STATEFIP for a single state
+			year                : int, defaults to None. If None, calculations will proceed using class self.base_year
+			data                : pandas dataframe, defaults to None. If not None, should be a subset of self.microdata
+
+		Returns:
+			mean_wage           : float, A single number indicating the mean wage across the dataset for this group of people.
 		"""
-		max_ed = self.microdata[(self.microdata.EDUC >= prereq_educ_level) & (self.microdata.EDUC < program_educ_level) & (self.microdata.STATEFIP == statefip) & (self.microdata.YEAR == 2019)]
+
+		if year is None:
+			year = base_year
+		else:
+			year = year
+
+		if data is None:
+			data = self.microdata
+		else:
+			data = data
+
+		max_ed = data[(data.EDUC >= prereq_educ_level) & (data.EDUC < program_educ_level) & (data.STATEFIP == statefip) & (data.YEAR == year)]
 		mean_wage = np.sum(max_ed["INCWAGE_current"] * max_ed["ASECWT"]) / np.sum(max_ed["ASECWT"])
 		return(mean_wage)
 
 	def rudimentary_hs_baseline(self, statefip):
+		"""
+		This function uses the entire self.microdata dataset to calculate a naive (there's that word again) baseline
+		projecting wages for high school graduates out to the 1- 5- and 10-year time horizons.
+
+		It does this simply by divying up the CPS sample into groups of high school graduates of the appropriate ages,
+		converting their wages into current dollars, and then projecting current traditional-aged HS grads' wages
+		out to the appropriate time horizon.
+
+		Parameters:
+			statefip : str, State FIPS code, e.g. "08"
+
+		Results:
+			wage_projections : A dict containing 1, 5, and 10 year projections for high school graduates in a given state
+		"""
 		first_year = self.base_year - 10
 		final_year = self.base_year
 
@@ -109,51 +177,29 @@ class CPS_Ops(object):
 
 		return(wage_projections)
 
-	def wage_change_across_years(self, start_year, end_year, age_group_at_start, statefip):
-		"""
-		Calculate mean wage change across years for individuals in a given state and age group.
-		Parameters:
-		-----------
-		start_year : int
-			CPS education recode code for the lower-bound education level
-		end_year : int
-			CPS education recode code for the upper-bound education level
-		age_group_at_start : str
-			One of ['18 and under','19-25','26-34','35-54','55-64','65+']. These are divvied up in the CPS data at init of the CPS_Ops object.
-		statefip : str
-			State FIPS code, e.g. "08"
-		Returns
-		-------
-		A single number indicating the mean wage across the dataset for this group of people.
-		"""
-		wage_start = self.all_mean_wages.loc[(self.all_mean_wages['YEAR'] == start_year) & (self.all_mean_wages['age_group'] == age_group_at_start) & (self.all_mean_wages['STATEFIP'] == statefip), 'mean_INCWAGE'].iat[0]
-		wage_end = self.all_mean_wages.loc[(self.all_mean_wages['YEAR'] == end_year) & (self.all_mean_wages['age_group'] == age_group_at_start) & (self.all_mean_wages['STATEFIP'] == statefip), 'mean_INCWAGE'].iat[0]
-		wage_change = wage_end - wage_start
-		return(wage_change)
 
 	def frames_wage_change_across_years(self, ind_frame, start_year_column, end_year_column, age_group_start_column, statefip_column, hsgrads_only = True):
 		"""
 		Given a dataframe with individual microdata, add a new column describing the change in state-level wages
 		for people in their age group across the provided time frame (e.g. time spent in educational/training program).
+
+		This allows analysts to (in a simple way) correct the difference between post- and pre-program earnings for trend and for experience effects.
+
 		Parameters:
 		-----------
-		ind_frame : Pandas DataFrame
-			Dataframe containing microdata for individuals
-		start_year_column : str
-			Name of column containing individuals' years of entry into educational programs
-		end_year_column : str
-			Name of column containing individuals' years of exit from educational programs
-		age_group_start_column : str
-			Name of column containing age groups.
-			These are in ['18 and under','19-25','26-34','35-54','55-64','65+'].
-		statefip_column : str
-			Name of column contianing state FIPS codes
-		hsgrads_only : boolean
-			If true, we correct for macro trends using only data from high school graduates (max education)
+		ind_frame              :  Pandas DataFrame, Dataframe containing microdata for individuals
+		start_year_column      :  str, Name of column containing individuals' years of entry into educational programs
+		end_year_column        :  str, Name of column containing individuals' years of exit from educational programs
+		age_group_start_column :  str, Name of column containing age groups. These are in ['18 and under','19-25','26-34','35-54','55-64','65+'].
+		statefip_column        :  str, Name of column contianing state FIPS codes
+		hsgrads_only           :  boolean, If true, we correct for macro trends using only data from high school graduates (max education)
+
 		Returns
 		-------
-		A dataframe containing a new column ("wage_change") which expresses the difference between pre- and post-program earnings corrected for trend.
+		A copy of the original dataframe ind_frame containing a new column ("wage_change") which expresses the average chabnge in earnings
+		for individuals in their age group over the time frame they were in an educational program.
 		"""
+
 		if (hsgrads_only == False):
 			cps_frame = self.all_mean_wages
 		else:
@@ -169,17 +215,25 @@ class CPS_Ops(object):
 		"""
 		This function fits a modified Mincer model and saves the results. If results already exist,
 		by default this uses the existing fit model in data/models.
-		For reference, see:
+
+		The Mincer model can be used to predict expected wages for a given individual given their age, and education
+		(and their imputed work experience based on these variables). The Earnings_Premium() class in the metrics submoduel
+		uses the Mincer model produced here to calculate individuals' (and programs') premia over expected wages.
+
+		Reference:
 			- https://www.nber.org/papers/w13780.pdf
 			- https://www.nber.org/papers/w9732.pdf (see page 49 for sample information)
+
 		Mincer models are commonly used in educational economics as a way of estimating returns to schooling and experience.
 		As a fully predictive model of wages, they are of limited value (R2 ~ 0.15). This is because of individual-level
 		heterogeneity with regard to endowments and opportunities. However, in this context we use them simply to get the
 		following (fairly precisely estimated) coefficients:
+
 		1) years of schooling
 		2) interaction between work experience and years of schooling
 		3) work experience
 		4) work experience squared
+
 		The inclusion of the interaction term (2) and the quadratic term (4) are intended to capture the differential returns
 		to work experience across different levels of educational preparation (e.g. a marginal year of experience for a college grad
 		may have a higher return than for a high school grad) and the diminishing returns to experience (e.g. for some levels of
