@@ -10,13 +10,22 @@ import statsmodels.formula.api as smf
 from os import path
 
 """
-TO do here:
+This submodule is home to return calculations -- the R in ROI.
 
-- mean wages for all
-- mean wages for employed
-- use person weights
-- account for inflation?
-- ???
+Please note that the classes and methods contained in this submodule are just the start for rigorous and robust ROI measurement.
+These methods allow an analyst of intermediate technical sophistication to calculate individual- and program-level outcome of various kinds,
+to adjust for some common measurement concerns, and to produce summary statistics.
+
+These methods DO NOT represent an avenue for exploring the causal impact of a given program or institution, for drawing determinate
+conclusions about program efficacy, or for identifying what programs, institutions, or student groups need more or less funding.
+
+Causal claims are the province of randomized experiments, quasi-random observational studies, and carefully done time series studies.
+None of these avenues are supported here.
+
+However, much can be done for learners and workers using non-causal statistical inference. For example, each of the methods in this
+submodule calculates returns at the level of the individual student. An analyst can use the equity metrics introduced in equity.py
+in order to identify whether and how returns may differ across student groups, to investigate the drivers of inequality, and explore
+how some groups of students may be uniquely well- or poorly-served by a given program or institution.
 
 """
 
@@ -25,6 +34,33 @@ pd.set_option('display.float_format', lambda x: '%.3f' % x)
 CPS_Education_Levels = [("GED",73),("BA",111),("MA",123),("PHD",125)]
 
 class Earnings_Premium:
+	"""
+	This method calculates predicted (counterfactual) wages for students who have participated in education or training
+	programs, calulates the difference between their observed and counterfactual wages, and produces program- or institution-level
+	statistics summarizing the difference between observed and counterfactual wages, which can be interpreted as the
+	putative impact of participating in the program.
+
+	The method surveys.CPS_Ops().fit_mincer_model fits a Mincer model, using microdata to produce coefficients that are used in this method.
+	These coefficients most be stored locally in order for this method to work. They are packaged with the module.
+
+	Parameters:
+		frame                :   A dataframe containing joined student education and wage data
+		state                :   The name of a column in frame containing state FIPS codes as strings
+		prior_education      :   The name of a column in frame containing students' prior education levels before program participation
+		wage_at_start        :   The name of a column in frame containing students' earnings or wages at a set period (e.g. 1 quarter) before program entry
+		wage_at_end          :   The name of a column in frame containing students' earnings or wages at a set period (e.g. 1 quarter) AFTER program entry
+		program_start_year   :   The name of a numeric column (YYYY) containing the program start year
+		program_end_year     :   The name of a numeric column (YYYY) containing the program start year
+		age                  :   The name of a column containing students' CURRENT AGEs
+
+	Attributes:
+		The series associated with all parameters are set as attributes. In addition, we have...
+
+		years_in_program     :   A Pandas series ordered in the same order as frame containing the number of years each student spent in their program
+		predicted_wage       :   A pandas series ordered in the same order as frame containing students' predicted wages, based on a Mincer model trained on CPS data
+		full_premium         :   A pandas series ordered in the same order as frame containing the differenc between students' predicted and actual wages, e.g. their earnings premium
+
+	"""
 	def __init__(self, frame, state, prior_education, wage_at_start, wage_at_end, program_start_year, program_end_year, age):
 
 		# get external data necessary for calculation
@@ -47,7 +83,6 @@ class Earnings_Premium:
 		self.full_premium = self.wage_at_end - self.predicted_wage
 
 	def mincer_predicted_wage(self, state, prior_education, current_age, starting_wage, years_passed):
-
 		"""
 		Given a state, a prior education level (CPS EDUC code), the current age of an individual, their wage
 		before entering an educational program, and the time they spent in the program, this function calculates
@@ -59,23 +94,13 @@ class Earnings_Premium:
 		of work experience.
 
 		Parameters:
-		-----------
-		prior_education : int
-			Integer code describing individuals' prior education level
-			# see https://cps.ipums.org/cps-action/variables/EDUC#codes_section
+			prior_education              : int, Integer code describing individuals' prior education level. see https://cps.ipums.org/cps-action/variables/EDUC#codes_section
+			current_age                  : int, Individuals' current age (post program)
+			starting_wage                : float, Individuals' annual wage prior to starting educational program
+			years_passed                 : int, Program length, e.g. 2 years for an associate's degree
 
-		current_age : int
-			Individuals' current age (post program)
-
-		starting_wage : float
-			Individuals' annual wage prior to starting educational program
-
-		years_passed : int
-			Program length, e.g. 2 years for an associate's degree
-
-		Returns
-		-------
-		float: the expected counterfactual wage change for an individual over the time they were in a program, in present-year dollars.
+		Returns:
+			counterfactual_current_wage  : the expected counterfactual wage change for an individual over the time they were in a program, in present-year dollars.
 
 		"""
 		schooling_coef = self.mincer_params['years_of_schooling']
@@ -85,14 +110,16 @@ class Earnings_Premium:
 		years_of_schooling = pd.cut(prior_education, bins=[-1, 60, 73, 81, 92, 111, 123, 124, 125], right=True, labels=[10,12,14,13,16,18,19,20]).astype(float) # this is a hack to get years of schooling; using the pandas function here for symmetry
 
 		# get values for calculation
-		work_experience_current = current_age - years_of_schooling - 6 # based on Heckman
+		work_experience_current = current_age - years_of_schooling - 6 # based on Heckman's work
 		work_experience_start = work_experience_current - years_passed
 
-		# if starting wage is not given for high school graduates, give them the mean high school wage
-		# do this for 18-25 year-old HS grads ONLY! This is defensible on the grounds that these individuals
-		# are just entering the labor force and are broadly similar to each other. The assumption is less defensible
-		# for older unemployed workers with high school degrees, who likely differ systematically from older EMPLOYED
-		# workers with high school degrees.
+		"""
+		If starting wage is not given for high school graduates, give them the mean high school wage.
+		Do this for 18-25 year-old HS grads ONLY! This is defensible on the grounds that these individuals
+		are just entering the labor force and are broadly similar to each other. The assumption is less defensible
+		for older unemployed workers with high school degrees, who likely differ systematically from older EMPLOYED
+		workers with high school degrees.
+		"""
 		hs_mergeframe = pd.DataFrame(prior_education)
 		hs_mergeframe['state'] = state
 		hs_mergeframe['age_group'] = utilities.age_to_group(current_age - years_passed)
@@ -104,9 +131,6 @@ class Earnings_Premium:
 		# replace!
 		starting_wage.loc[(current_age <= 25) & (pd.isna(starting_wage))] = hsgrad_wages.loc[(current_age <= 25) & (pd.isna(starting_wage))]
 
-		# deal with other missing wages
-
-		# calculate
 		# change in natural log is approximately equal to percentage change
 		value_start = schooling_x_exp_coef*work_experience_start*years_of_schooling + exp_coef*work_experience_start + exp2_coef*(work_experience_start**2)
 		value_end = schooling_x_exp_coef*work_experience_current*years_of_schooling + exp_coef*work_experience_current + exp2_coef*(work_experience_current**2)
