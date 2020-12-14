@@ -344,6 +344,11 @@ class Census:
 
 		Returns:
 			geocodes:      :      A pandas dataframe ordered in the same order as dataframe containing twelve-digit codes -- as a string -- denoting a neighborhood-sized region in the United States.
+
+
+		Note for future developers:
+		The way this method works - e.g. saving the input to a CSV and then posting the CSV - is not ideal. StringIO should probably
+		used to submit as well as retrieve.
 		"""
 
 		dataframe_ordered = dataframe[['id','Address', 'City','State', 'Zip']]
