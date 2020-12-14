@@ -6,10 +6,11 @@ import os
 from datetime import date
 from roi import settings, utilities
 import warnings
+from io import StringIO
 
 """
-This submodule contains methods for communicating with external APIs and gathering data, mostly macroeconomic statistics,
-than may be necessary for calculating robust ROI metrics in a U.S. setting.
+This submodule contains methods for communicating with external APIs and gathering data, mostly
+macroeconomic statistics, that may be necessary for calculating robust ROI metrics in a U.S. setting.
 
 
 ##### BLS Resources #####
@@ -345,7 +346,8 @@ class Census:
 			geocodes:      :      A pandas dataframe ordered in the same order as dataframe containing twelve-digit codes -- as a string -- denoting a neighborhood-sized region in the United States.
 		"""
 
-		dataframe.to_csv("temp_addresses_frame.csv", index=False, header=None)
+		dataframe_ordered = dataframe[['id','Address', 'City','State', 'Zip']]
+		dataframe_ordered.to_csv("temp_addresses_frame.csv", index=False, header=None)
 		files = {'addressFile': open('temp_addresses_frame.csv', 'rb')}
 
 		url = "https://geocoding.geo.census.gov/geocoder/geographies/addressbatch?benchmark=9&vintage=Census2010_Census2010"
@@ -355,14 +357,14 @@ class Census:
 			response = requests.post(url, files=files)
 			response_content = response.content
 		except Exception as e:
-			print("EXCEPTION: Couldn't get geocoding API response for FILE")
+			raise Exception("Couldn't get geocoding API response for FILE {}".format(e))
 
-		# turn response into dataframe
+		# turn response into dataframe because it comes as a CSV
 		try:
 			bytes_to_csv = StringIO(str(response_content,'utf-8'))
 			df = pd.read_csv(bytes_to_csv, names=['id','provided_address','match','matchtype','clean_address','latlon','tiger_line_id','side_of_street','statefip','county','tract','block'], dtype=str).fillna("")
 		except Exception as e:
-			print("EXCEPTION: Failed parsing Census batch geocoder response into CSV: {}".format(e))
+			raise Exception("Failed parsing Census batch geocoder response into CSV: {}".format(e))
 
 		# combine variables to get a geocode
 		df['block_group'] = df['block'].astype(str).str.slice(start = 0, stop = 1)
