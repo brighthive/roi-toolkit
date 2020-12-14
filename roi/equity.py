@@ -506,7 +506,7 @@ class ADI(object):
 		# count up the merges
 		count_merged = np.sum(geocodes_merged._merge == "both")
 		count_unmerged = len(dataframe) - count_merged
-		print("Geocode merge: Merged {} of {} observations in input dataframe ({}%)".format(str(count_merged), str(count_unmerged), str(round(100*count_merged/len(dataframe), 2))))
+		print("Geocode merge: Merged {} of {} observations in input dataframe ({}%)".format(str(count_merged), str(len(dataframe)), str(round(100*count_merged/len(dataframe), 2))))
 
 		# a little bit of error handling
 		if (count_merged == 0):
