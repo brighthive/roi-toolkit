@@ -1,6 +1,10 @@
 import pandas as pd
 import numpy as np
+<<<<<<< HEAD
 from roi import utilities, settings
+=======
+from roi import utilities
+>>>>>>> 9c50af66ed44e409588165043ef95b00c1a35f54
 import seaborn as sns
 from matplotlib import pyplot as plt
 import warnings
@@ -506,7 +510,11 @@ class ADI(object):
 		# count up the merges
 		count_merged = np.sum(geocodes_merged._merge == "both")
 		count_unmerged = len(dataframe) - count_merged
+<<<<<<< HEAD
 		print("Geocode merge: Merged {} of {} observations in input dataframe ({}%)".format(str(count_merged), str(len(dataframe)), str(round(100*count_merged/len(dataframe), 2))))
+=======
+		print("Geocode merge: Merged {} of {} observations in input dataframe ({}%)".format(str(count_merged), str(count_unmerged), str(round(100*count_merged/len(dataframe), 2))))
+>>>>>>> 9c50af66ed44e409588165043ef95b00c1a35f54
 
 		# a little bit of error handling
 		if (count_merged == 0):
