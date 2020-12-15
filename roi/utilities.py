@@ -100,7 +100,11 @@ def State_To_FIPS_series(state_abbreviation_series):
 	Takes a pandas series of state postal codes and then returns a same-ordered list of associated FIPS codes
 	"""
 	crosswalk = Data.state_crosswalk
-	mapped = check_state_code_series(state_abbreviation_series.map(crosswalk))
+	try:
+		mapped = check_state_code_series(state_abbreviation_series.map(crosswalk))
+	except Exception as e:
+		print("State_To_FIPS_series usually takes a pandas series. Something else was passed. Now trying under assumption that passed object is list or array")
+		mapped = [State_To_FIPS(abbreviation) for abbreviation in list(state_abbreviation_series)]
 	return(mapped)
 
 def check_state_code(state_code):
