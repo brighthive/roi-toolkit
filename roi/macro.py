@@ -158,7 +158,7 @@ class BLS_Ops:
 
 		return(percent_employed_change)
 
-	def wage_change(self, state_code, start_month, end_month, convert=False):
+	def wage_change(self, frame_, state_code_column_name, start_month_column_name, end_month_column_name, convert=False):
 		"""
 		This method takes a dataframe and three column names. Each row in the provided dataframe should correspond
 		to a unique individual. The idea of this function is to, for each individual, provide the overall change
@@ -198,7 +198,7 @@ class BLS_Ops:
 		all_state_codes = state_code.unique()
 		unmerged_state_codes = set(all_state_codes).difference(set(utilities.Data.state_crosswalk.keys()))
 		if len(unmerged_state_codes) > 0:
-			warnings.warn("Series passed as argument state_code contains invalid values for state codes. Please refer to https://www.bls.gov/respondents/mwr/electronic-data-interchange/appendix-d-usps-state-abbreviations-and-fips-codes.htm for valid codes.")
+			warnings.warn("Series passed as argument state_code contains invalid values for state codes. Please refer to https://www.bls.gov/respondents/mwr/electronic-data-interchange/appendix-d-usps-state-abbreviations-and-fips-codes.htm for valid codes. Use utilities.State_To_FIPS_series() to convert postal codes to FIPS.")
 
 		temp_frame = pd.DataFrame({'start_month':start_month,'end_month':end_month,'state_code':state_code})
 

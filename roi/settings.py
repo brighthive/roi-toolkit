@@ -9,8 +9,8 @@ class File_Locations:
 	"""
 	Available from https://www.neighborhoodatlas.medicine.wisc.edu/
 	"""
-	adi_toplevel_location = os.path.join(dirname,"../data/adi-download/US_blockgroup_15.txt")
-	adi_local_location = os.path.join(dirname,"data/adi/US_blockgroup_15.txt")
+
+	adi_location = os.path.join(dirname,"data/adi/US_blockgroup_15.txt")
 
 
 	"""

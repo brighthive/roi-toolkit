@@ -255,7 +255,7 @@ class CPS_Ops(object):
 			pickle.dump(params,f)
 		
 		# save full model to data (for repo)
-		results.save(settings.File_Locations.mincer_params_location)
+		results.save(settings.File_Locations.mincer_model_location)
 
 		# get and save results
 		self.mincer = results
