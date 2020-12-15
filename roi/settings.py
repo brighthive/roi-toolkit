@@ -33,7 +33,7 @@ class File_Locations:
 	"""
 	Local files
 	"""
-	mincer_model_location = os.path.join(dirname,"..data/models/mincer.pickle")
+	mincer_model_location = os.path.join(dirname,"../data/models/mincer.pickle")
 	mincer_params_location = os.path.join(dirname, "data/mincer_params.pickle")
 	cpi_adjustments_location = os.path.join(dirname, "data/bls/cpi_adjustment_range.csv")
 	mean_wages_location = os.path.join(dirname, "data/mean_wages.csv")

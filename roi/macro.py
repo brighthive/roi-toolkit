@@ -2,6 +2,7 @@ from datetime import date
 from roi import settings, utilities
 import pandas as pd
 import warnings
+import numpy as np
 
 
 """
@@ -90,7 +91,7 @@ class BLS_Ops:
 		"""
 
 		# validation
-		if not isinstance(start_year, int) or not isinstance(end_year, int):
+		if not (isinstance(start_year, (int, np.integer)) & isinstance(end_year, (int, np.integer))):
 			if isinstance(start_year, pd.Series) or isinstance(end_year, pd.Series):
 				print("To convert a Pandas Series using CPI, use the adjust_to_current_dollars() method.")
 			raise ValueError("start_year and end_year must be scalar integers")
