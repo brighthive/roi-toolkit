@@ -1,6 +1,6 @@
 import pandas as pd
 from datetime import date
-from roi import macro, settings, external
+from roi import macro, settings, external, utilities
 import numpy as np
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
@@ -60,6 +60,9 @@ class CPS_Ops(object):
 		self.microdata['age_group'] = pd.cut(self.microdata['AGE'], bins=[0,18,25,34,54,64,150], right=True, labels=['18 and under','19-25','26-34','35-54','55-64','65+']).astype(str)
 		self.microdata['hs_education_at_most'] = (self.microdata['EDUC'] >= 73) & (self.microdata['EDUC'] < 90) & (self.microdata['AGE'] >= 18)# & (self.microdata['AGE'] <= 38)
 		
+		# replace STATEFIP with string
+		self.microdata['STATEFIP'] = utilities.check_state_code_series(self.microdata['STATEFIP'])
+
 		self.bls = macro.BLS_Ops()
 		self.cpi_adjustment_factor = self.bls.get_single_year_adjustment_factor(1999, self.bls.max_cpi_year) # CPS data is converted into 1999 base, and then (below) we convert it into present-year dollars
 
@@ -134,10 +137,10 @@ class CPS_Ops(object):
 		mean_wage = np.sum(max_ed["INCWAGE_current"] * max_ed["ASECWT"]) / np.sum(max_ed["ASECWT"])
 		return(mean_wage)
 
-	def rudimentary_hs_baseline(self, statefip):
+	def rudimentary_hs_baseline(self, statefip, years_list):
 		"""
 		This function uses the entire self.microdata dataset to calculate a naive (there's that word again) baseline
-		projecting wages for high school graduates out to the 1- 5- and 10-year time horizons.
+		projecting wages for high school graduates out to an arbitrary time horizon.
 
 		It does this simply by divying up the CPS sample into groups of high school graduates of the appropriate ages,
 		converting their wages into current dollars, and then projecting current traditional-aged HS grads' wages
@@ -145,9 +148,10 @@ class CPS_Ops(object):
 
 		Parameters:
 			statefip : str, State FIPS code, e.g. "08"
+			years_list : list of numbers.
 
 		Results:
-			wage_projections : A dict containing 1, 5, and 10 year projections for high school graduates in a given state
+			wage_projections : A list in the same order as years_list containing the wage projections for each year
 		"""
 		first_year = self.base_year - 10
 		final_year = self.base_year
@@ -169,11 +173,13 @@ class CPS_Ops(object):
 
 		annualized_wage_growth = (late_wage / early_wage)**(1/10) - 1
 
-		year1_projection = recent_wage * ((1+annualized_wage_growth)**1)
-		year5_projection = recent_wage * ((1+annualized_wage_growth)**5)
-		year10_projection = recent_wage * ((1+annualized_wage_growth)**10)
+		wage_projections = [recent_wage * ((1+annualized_wage_growth)**year) for year in years_list]
 
-		wage_projections = {"year1":year1_projection, "year5":year5_projection, "year10":year10_projection}
+		#year1_projection = recent_wage * ((1+annualized_wage_growth)**1)
+		#year5_projection = recent_wage * ((1+annualized_wage_growth)**5)
+		#year10_projection = recent_wage * ((1+annualized_wage_growth)**10)
+
+		#wage_projections = {"year1":year1_projection, "year5":year5_projection, "year10":year10_projection}
 
 		return(wage_projections)
 
