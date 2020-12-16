@@ -236,7 +236,7 @@ class Employment_Likelihood:
 			correction         : A panda series of length len(dataframe) with state-level change in employment for the specified states and time frames
 
 		"""
-		rates = utilities.Local_Data.bls_employment_series()
+		rates = utilities.Local_Data.bls_employment_rate_series()
 		dataframe[state] = utilities.check_state_code_series(dataframe[state])
 		entry_employment = dataframe.merge(rates, left_on=[state, entry_year_month], right_on=['state_code','month_year'], how='left')
 		exit_employment = dataframe.merge(rates, left_on=[state, exit_year_month], right_on=['state_code','month_year'], how='left')

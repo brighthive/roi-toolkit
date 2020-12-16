@@ -205,6 +205,9 @@ class Local_Data:
 	def bls_laborforce_series():
 		return(pd.read_csv(settings.File_Locations.bls_laborforce_location, converters={"state_code":check_state_code})) # read in states with leading zeroes, per FIPS
 
+	def bls_employment_rate_series():
+		return(pd.read_csv(settings.File_Locations.bls_employment_rate_location, converters={"state_code":check_state_code})) # read in states with leading zeroes, per FIPS
+
 	def bls_wage_series():
 		return(pd.read_csv(settings.File_Locations.bls_wage_location, converters={"state_code":check_state_code})) # read in states with leading zeroes, per FIPS
 
