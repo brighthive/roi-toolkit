@@ -14,6 +14,8 @@ The **Return on Investment (ROI) Toolkit** in this repository provides code and 
 
 Students and workers of all ages in America desperately need greater transparency on the return on investment (ROI) for all degrees, credentials, and certificates. The ROI Toolkit is a first step on the road to delivering it.
 
+For a quick, example-based introduction to the ROI Toolkit's core methods, please see the [Example Notebook](https://github.com/brighthive/roi-toolkit/blob/master/Example%20Notebook.ipynb) in this repo.
+
 ## Status of the ROI Toolkit
 
 The Toolkit is **open-source**. It can be forked or cloned by anyone. Moreover, pull requests can be submitted to the Toolkit's maintainers to fix bugs or add additional metrics or functionalities. Please note that use of the Toolkit does not imply BrightHive's endorsement of the setting or particular use of the calculated metrics.
