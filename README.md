@@ -90,9 +90,27 @@ The Mincer model was [introduced](https://www.journals.uchicago.edu/doi/10.1086/
 
 The traditional Mincer model is a log-log regression such as the following:
 
-$ln(wage) = \text{intercept} + \rho \text{years of schooling} + \Beta_1 \text{years of experience} + \Beta_2 \text{years of experience}^2$
+`ln(wage) = ln(intercept) + (A * years of schooling) + (B * years of experience) + (C * years_of_experience)^2`
 
-[Heckman](https://www.nber.org/system/files/working_papers/w9732/w9732.pdf)
+In this model, the intercept is the natural logarithm, expected (average) earnings for a (in reality largely hypothetical) individual with no education and no experience. In this setup, coefficients `A`, `B`, and `C` provide estimates of the percentage increase in earnings associated with differences in schooling or experience. A value of `A = 0.1`, for instance, would mean that an additional year of schooling is associated with a 10% increase in earnings.
+
+#### How is the model used here?
+
+The Mincer model fit in `roi.surveys` is very slightly different than the conventional one. We fit:
+
+`log(wage) ~ ln(intercept) + state + years_of_schooling + years_of_schooling:work_experience + work_experience + work_experience^2`
+
+The differences are (1) the inclusion of state dummies to specify regional differences and (2) an interaction between years of schooling and work experience to account, for instance, for diminishing returns to experience schooling.
+
+Our use of the Mincer model is somewhat "off-label." As you'll see if you attempt to fit this model yourself (or if you simply look at the model output stored in the repo), the model on its own does not estimate wages in a precise way; analysts working with a Mincer regressions can expect to see [R-squareds](https://en.wikipedia.org/wiki/Coefficient_of_determination) around 0.3 -- so around 30% of the variation in wages is accounted for by education or wage differences. That's because most of the variation is exogenous: individuals' earnings are determined by their ability, their backgrounds, their areas of study, their social networks, etc.
+
+There's one valuable piece of data, however, that prices in all of this unmodeled variation when we're trying to estimate an individual's wages at time `t`, and that's their wages at time `t-1`, `t-2`, or earlier. Once we have this data, we can use the Mincer coefficients to much more precisely estimate individuals' expected wages after additional education and experience. This is how the Mincer model is used in `roi.metrics`: using individuals' prior wages and data about their education and experience, we derive a "predicted wage"--in essence, the average or expected earnings for an individual with their prior earnings after an additional X years of school or Y years of experience.
+
+The earnings premium for a given individual is calculated as the difference between their observed and predicted wages, and the earnings premium for a given group (e.g. program or demographic group) is simply the arithmetic mean of the individual earnings premiums.
+
+#### Additional reading
+
+• [James Heckman's review of Mincer models](https://www.nber.org/system/files/working_papers/w9732/w9732.pdf), from which some of the techniques used in the module are derived.
 
 ### Socioeconomic Status and Area Deprivation Index
 
