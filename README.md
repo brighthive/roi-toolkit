@@ -74,6 +74,26 @@ In addition to code, the module itself also ships with prepackaged data that is 
 
 ## Background
 
+### Why ROI?
+
+### Equity methods and key concerns
+
+### Mincer Model and Earnings Premium
+
+The ROI Toolkit comes packaged with a pickled set of coefficients for a Mincer model that is fit in `roi.surveys.CPS_Ops.fit_mincer_model()`. These coefficients are stored at `roi.settings.File_Locations.mincer_params_location`, and the full model is committed to the repo at `roi.settings.File_Lcations.mincer_model_location`. In `roi.metrics.Earnings_Premium.mincer_predicted() wage`, these coefficeints are used to calculate an "expected wage" for individuals given their age, education level, and U.S. State.
+
+#### What is a Mincer model?
+
+The backbone of this method is a modified [Mincer earnings function](https://en.wikipedia.org/wiki/Mincer_earnings_function) that is fit on ten years of national-level Current Population Survey data. The complete model is stored in the `roi-toolkit` repo, while its coefficients alone are packaged with the module itself.
+
+The Mincer model was [introduced](https://www.journals.uchicago.edu/doi/10.1086/258055) by the economist Jacob Mincer in 1958 as a way of calculating the returns to education and work experience. In many settings, the coefficients estimated by the model are used by macroeconomists in order to make or support inferences about human capital at the national level, as in [this recent paper](https://onlinelibrary.wiley.com/doi/abs/10.1111/j.1475-4991.2012.00517.x).
+
+The traditional Mincer model is a log-log regression such as the following:
+
+$$ln(wage) = \text{intercept} + \rho \text{years of schooling} + \Beta_1 \text{years of experience} + \Beta_2 \text{years of experience}^2$$
+
+[Heckman](https://www.nber.org/system/files/working_papers/w9732/w9732.pdf)
+
 ### Socioeconomic Status and Area Deprivation Index
 
 We are interested in calculating socioeconomic status because of its evident correlation, above and beyond income and poverty status, with health, crime, employment and educational achievement. For equity asssessment purposes, we want to be able to identify possible disparities between groups of prospective students whose differing life circumstances and genuine challenges may not be adequately captured by the existing data.
