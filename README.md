@@ -90,7 +90,7 @@ The Mincer model was [introduced](https://www.journals.uchicago.edu/doi/10.1086/
 
 The traditional Mincer model is a log-log regression such as the following:
 
-$$ln(wage) = \text{intercept} + \rho \text{years of schooling} + \Beta_1 \text{years of experience} + \Beta_2 \text{years of experience}^2$$
+$ln(wage) = \text{intercept} + \rho \text{years of schooling} + \Beta_1 \text{years of experience} + \Beta_2 \text{years of experience}^2$
 
 [Heckman](https://www.nber.org/system/files/working_papers/w9732/w9732.pdf)
 
