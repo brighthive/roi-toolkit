@@ -6,7 +6,7 @@
 * [Status of the ROI Toolkit](#status-of-the-roi-toolkit)
 * [Principles](#principles)
 * [ROI Toolkit Quickstart](#roi-toolkit-quickstart)
-* [For maintainers](#for -aintainers)
+* [For maintainers](#for-maintainers)
 * [Background](#background)
 	* [Why ROI?](#why-roi)
 	* [Equity methods](#equity-methods)
