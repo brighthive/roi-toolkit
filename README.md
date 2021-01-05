@@ -2,6 +2,19 @@
 
 **THIS README IS UNDER CONSTRUCTION: v0.9 of the README. will be complete as of 01/06/21**
 
+* [Introduction](#introduction)
+* [Status of the ROI Toolkit](#status-of-the-roi-toolkit)
+* [Principles](#principles)
+* [ROI Toolkit Quickstart](#roi-toolkit-quickstart)
+* [For maintainers](#for -aintainers)
+* [Background](#background)
+	* [Why ROI?](#why-roi)
+	* [Equity methods](#equity-methods)
+	* [Socioeconomic Status and Area Deprivation Index](#socioeconomic-status-and-area-deprivation-index)
+	* [Mincer Model and Earnings Premium](#mincer-model-and-earnings-premium)
+
+* [Example Jupyter notebook](https://github.com/brighthive/roi-toolkit/blob/master/Example%20Notebook.ipynb)
+
 ## Introduction
 
 The costs of education are rising considerably faster than inflation. Students and their families make sizable investments--of time, tuition, and foregone earnings--but see a wide range of returns. Wage, employment, completion, and satisfaction outcomes vary dramatically, and students often lack the data necessary to make informed educational choices that can lead to a better future.
