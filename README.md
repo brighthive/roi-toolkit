@@ -78,7 +78,60 @@ In addition to code, the module itself also ships with prepackaged data that is 
 
 ### Why ROI?
 
-### Equity methods and key concerns
+### Equity methods
+
+Many analysts will be interested in using the ROI Toolkit to explore concerns of equity and equitability in education. Broadly speaking, equity is the application of principles of justice and fairness to distributional questions, often with reference to the idiosyncrasies of individuals and groups. While equality can be assessed by a simple intergroup comparison, concerns about equity can make reference to historical discrimination, cultural power, and the needs, strengths, and social positions of different groups. Operationally, equity is a continual process by which equality can be achieved. Different institutions, policymakers, and public bodies will have different conceptions of what constitutes an equitable situation.
+
+For this reason, the equity metrics included in the ROI Toolkit should not be considered indices of equitable or inequitable situations: no single number or collection of numbers can conclusively prove or disprove an inequitable state of affairs. Instead, these metrics are a starting point: a way for analysts to investigate equity concerns and open the door to further investigation.
+
+The ROI Toolkit contains four `equity` child classes that inherit from the `Metric` parent class. These classes--`Theil_T(), Theil_L(), Gini(), and Variance_Analysis()`--are used to assess intergroup differences. Analysts provide a value variable (for example, earnings) and a grouping variable (for example, gender). Each of the equity classes then operates on these two variables to produce:
+
+* A boxplot visualizing the differences in the provided value across groups
+* The overall value of the inequality measurement that is at the core of each class (for example, the Gini index for the provided data)
+* The between-group and within-group components of the inequality measurement
+* A ratio between between-group and overall inequality (between 0 and 1)
+
+This last item is perhaps the most useful: where intergroup differences are high, a high percentage of variation will be accounted for by between-group variation. The higher this ratio is, the more cross-group inequality there seems to be.
+
+#### Key concerns
+
+Investigating equity concerns is complex. The presence of intergroup differences is not necessarily evidence of bias, and the absence of intergroup difference does not serve as evidence that discrimination does not occur. Equity methods should be used to assemble a body of evidence that analysts can use to conduct more in-depth research, including more extensive quantitative analysis and qualitative work, into the causes of disparate outcomes.
+
+Analysts should consider **[selection effects](https://en.wikipedia.org/wiki/Selection_bias)**. When there is an apparent difference between post-program outcomes across groups, it could be the result of their having been served disparately by a program. But it could also be a result of the composition of those who choose to (or who are able to) participate in each program. Post-program outcomes are determined in part by pre-program conditions: if low-income students are more likely to choose programs that dramatically increase their (very low) pre-program wages, their post-program wages might still be significantly lower than those of high-income students. Meanwhile, high-income students may have high post-program wages--even if they participated in low-ROI programs--as a result of their increased access to opportunity and greater economic flexibility.
+
+One way to address this concern is to use various measures of the **earnings premium** (discussed below) as the value input to the equity methods. Instead of assesssing inequality across post-program wages, analysts can assess inequality in the **estimated effect** of each program--the change in wages broadly attributable to program participation. By adjusting for region, education, and prior wage, analysts can get at a meaningful kind of inequality: the differences in how programs serve students.
+
+Analysts should also consider deploying the equity methods with non-earnings variables. Equity statistics can be calculated for completion rate, time-to-completion, credits taken, or GPA. All of these areas are fair game for equity analysis, and intergroup differences in any area are reasons to dig deeper.
+
+Analysts should deploy equity methods across all possible demographic categories: ethnic background and gender are commonly used, but different institutions will have different types of demographic data available. It's also important to assess differences across categories that are features of the insitution, not of the student: analysts will want to determine if there are disparate outcomes across program, department, or even (where relevant) dormitory or on-/off-campus housing status. One possibility is to use earnings premium in conjunction with financial aid status: if earnings premiums are systematically lower for students who receive aid, then it's possible that programs are not doing enough to support such students.
+
+For programs that have limited access to demographic information, student addresses may be enough to establish rough buckets for socioeconomic status. The ROI Toolkit offers methods and classes (see following section) for establishing this information, as well as a rationale for doing so.
+
+### Socioeconomic Status and Area Deprivation Index
+
+The `equity` submodule aslso includes an `ADI` class, which is used to group individuals into quintiles of socioeconomic status depending on their location. In order to use this method, individuals must be associated with U.S. Census geocodes. If the original dataset includes street addresses, the ROI Toolkit offers a method to query the U.S. Census API in order to retrieve geocdes from street addresses. This method can be found in the `roi.external.Census` class.
+
+We are interested in calculating socioeconomic status because of its evident correlation, above and beyond income and poverty status, with health, crime, employment and educational achievement. For equity asssessment purposes, we want to be able to identify possible disparities between groups of prospective students whose differing life circumstances and genuine challenges may not be adequately captured by the existing data.
+
+The apparent relationship between SES and many other parameters of interest offers a scalable means of approximately identifying opportunity and disadvantage, broadly defined, with limited data.
+
+There are several potential avenues for constructing SES. For some background, please see:
+
+- [Census-based socioeconomic indicators for monitoring injury causes in the USA: a review](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4518757/)
+- [Validating the Use of Census Data on Education as a Measure of Socioeconomic Status in an Occupational Cohort](https://www.ncbi.nlm.nih.gov/pubmed/30451561)
+- [Measuring Socioeconomic Status (SES) in the NCVS: Background, Options, and Recommendations](https://www.bjs.gov/content/pub/pdf/Measuring_SES-Paper_authorship_corrected.pdf)
+- [Constructing a Time-Invariant Measure of the Socio-economic Status of U.S. Census Tracts](https://link.springer.com/article/10.1007%2Fs11524-015-9959-y)
+
+A commonly used SES index is the National Cancer Institute's factor analysis-based [method](https://seer.cancer.gov/seerstat/databases/census-tract/index.html) (Further background [here](https://www.ncbi.nlm.nih.gov/pubmed/24178398) and [here](https://www.ncbi.nlm.nih.gov/pubmed/9794168)) However, this data is not immediately available for our use at present.
+
+We ultimately use the [Area Deprivation Index](https://www.neighborhoodatlas.medicine.wisc.edu/), a methodology based on the American Community Survey (ACS) 5-year estimates. Presently, this repository uses the 2011-2015 ACS estimates, but the easy availability of the ACS data and the transparency of the methodology enables us to continue calculating these indices in the event that the full dataset is taken offline.
+
+ADI indices are given on a 0-100 scale, with lower indices representing less deprivation and higher SES, and higher indices representing more deprivation and lower SES.
+
+Methodological reading:
+- [Neighborhood socioeconomic disadvantage and 30-day rehospitalization: a retrospective cohort study](https://www.ncbi.nlm.nih.gov/pubmed/25437404)
+- [Area deprivation and widening inequalities in US mortality, 1969-1998](https://www.ncbi.nlm.nih.gov/pubmed/12835199)
+
 
 ### Mincer Model and Earnings Premium
 
@@ -113,27 +166,3 @@ The earnings premium for a given individual is calculated as the difference betw
 #### Additional reading
 
 - [James Heckman's review of Mincer models](https://www.nber.org/system/files/working_papers/w9732/w9732.pdf), from which some of the techniques used in the module are derived.
-
-### Socioeconomic Status and Area Deprivation Index
-
-We are interested in calculating socioeconomic status because of its evident correlation, above and beyond income and poverty status, with health, crime, employment and educational achievement. For equity asssessment purposes, we want to be able to identify possible disparities between groups of prospective students whose differing life circumstances and genuine challenges may not be adequately captured by the existing data.
-
-The apparent relationship between SES and many other parameters of interest offers a scalable means of approximately identifying opportunity and disadvantage, broadly defined, with limited data.
-
-There are several potential avenues for constructing SES. For some background, please see:
-
-- [Census-based socioeconomic indicators for monitoring injury causes in the USA: a review](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4518757/)
-- [Validating the Use of Census Data on Education as a Measure of Socioeconomic Status in an Occupational Cohort](https://www.ncbi.nlm.nih.gov/pubmed/30451561)
-- [Measuring Socioeconomic Status (SES) in the NCVS: Background, Options, and Recommendations](https://www.bjs.gov/content/pub/pdf/Measuring_SES-Paper_authorship_corrected.pdf)
-- [Constructing a Time-Invariant Measure of the Socio-economic Status of U.S. Census Tracts](https://link.springer.com/article/10.1007%2Fs11524-015-9959-y)
-
-A commonly used SES index is the National Cancer Institute's factor analysis-based [method](https://seer.cancer.gov/seerstat/databases/census-tract/index.html) (Further background [here](https://www.ncbi.nlm.nih.gov/pubmed/24178398) and [here](https://www.ncbi.nlm.nih.gov/pubmed/9794168)) However, this data is not immediately available for our use at present.
-
-We ultimately use the [Area Deprivation Index](https://www.neighborhoodatlas.medicine.wisc.edu/), a methodology based on the American Community Survey (ACS) 5-year estimates. Presently, this repository uses the 2011-2015 ACS estimates, but the easy availability of the ACS data and the transparency of the methodology enables us to continue calculating these indices in the event that the full dataset is taken offline.
-
-ADI indices are given on a 0-100 scale, with lower indices representing less deprivation and higher SES, and higher indices representing more deprivation and lower SES.
-
-Methodological reading:
-- [Neighborhood socioeconomic disadvantage and 30-day rehospitalization: a retrospective cohort study](https://www.ncbi.nlm.nih.gov/pubmed/25437404)
-- [Area deprivation and widening inequalities in US mortality, 1969-1998](https://www.ncbi.nlm.nih.gov/pubmed/12835199)
-
