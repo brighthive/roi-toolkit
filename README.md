@@ -1,6 +1,6 @@
 # ROI Toolkit v0.9 (beta)
 
-**THIS README IS UNDER CONSTRUCTION: v0.9 of the README. will be complete as of 01/06/21**
+## Contents
 
 * [Introduction](#introduction)
 * [Status of the ROI Toolkit](#status-of-the-roi-toolkit)
@@ -90,6 +90,28 @@ In addition to code, the module itself also ships with prepackaged data that is 
 ## Background
 
 ### Why ROI?
+
+**Return on investment (ROI)** is just one facet of the much larger project of impact evaluation. In order to evaluate the impact of an educational or training program, analysts will need to conduct many of the calculations for which methods are provided here. Rigorous impact evaluation is hard, and drawing a clear causal arrow from a given institution or course of study to student outcomes requires intensive statistical work and a keen awareness of the many obstacles and challenges that present themselves. The ROI Toolkit is a way of making that process faster and easier- but it's just a starting place.
+
+The ROI Toolkit does not contain methods that explicitly calculate a "full" ROI metric. Instead, it contains methods separately addressing the **R** (Return, as in the `metrics` submodule) and the **I** (Investment, as in the `cost` submodule) in ROI. Analysts should pick the best way to present, combine, and analyze this information for their needs and for the needs of institutions and students. In doing so, they should consider several key concerns.
+
+#### Why dollarize?
+
+"Dollarization" is one way of referring to the conversion of the costs and benefits of education into purely monetary terms. For students and policymakers alike, return on education must be placed in the context of overall spending. Students invest time and money in their educations and forego other opportunities in order to participate. Policymakers have finite budgets from which to work and limited staffs with which to service students. For this reason, return statistics are rarely useful in isolation: even programs with high returns may be unrealistically expensive for most students, and some programs with nominally low returns may be a great deal. Money, time, staff, and energy are finite. Institutions must consider how to serve students with these limited resources. Likewise, students must consider how to make the most of the resources they have.
+
+#### Cost-effectiveness versus cost-benefit
+
+The **cost-effectiveness** of a training or education program is a measure of the amount that it takes to deliver some kind of (not necessarily monetary benefit). In a cost-effectiveness analysis, costs and benefits need not be in the same units. For example, Program A may deliver the average student a 10% increased probability of employment for $1000 spent on tuition; Program B may deliver a 20% increased probability for the same amount. In this context, Program B is more cost-effective for students than Program A where probability of employment is concerned. However, Program B may cost twice as much for an institution to operate: for the institution, then, Program A is more cost-effective when it comes to serving students. Cost-effectiveness analysis is useful when trying to maximize some outcome metric--for example, when trying to maximize graduation rates across a population. In order to help as many students as possible with a determinate set of resources (such as an annual budget), an institution may want to shift investment to its most cost-effective programs, thereby serving as many students as possible per dollar spent.
+
+A **cost-benefit analysis** of a training or education program is a simple ratio of benefits to costs. In order to conduct a cost-benefit analysis, both costs and benefits must be in the same units (typically dollars). Cost-benefit analyses are good ways of judging the effectiveness of individual programs. The benchmark here is 1:1 -- if the ratio of benefits to costs is 1, then a program delivers exactly as much benefit (in dollars) as it costs. In other words, there is no real return. The higher the benefits-to-costs ratio is, the better. But this information must be used in conjunction with data about cost-effectiveness: programs with a high benefit-cost ratio may require unrealistically high investments to start with, and therefore be available only to small segments of students.
+
+When presenting data to students, analysts should consider what form of presentation will make the most sense. For many students, offering a ratio will not be useful. Instead, ROI measurement programs may want to present the information graphically, as in the [EdReturns](https://www.mycoloradojourney.com/journey/tools/roi) tool used by the state of Colorado.
+
+#### Measurability bias
+
+Not all of the things that matter students, institutions, and policymakers are practically measurable. Indeed, many of the most important features of educational and training programs, particularly for traditional students, are difficult to quantify. For this reason, analysts should be wary of falling into the trap of measurability bias. If something can be measured, that doesn't necessarily mean it's informative. If something can't be measured, that doesn't mean it's not worth caring about. Rigorously quantifiable ROI metrics are not complete measures of the value of educational programs, and should not be treated as such.
+
+Nevertheless, analysts should strive to quantify even nominally unquantifiable concerns as much as possible. Though student morale, for instance, is notoriously difficult to assess, surveys can help-- and it's not out of the question to calculate the cost-effectiveness of a given program when it comes to improving student well-being. The use of metrics such as these does not need to constitute a way of ranking programs across different axes: rather, it means giving every decision-maker--students, parents, policymakers, employers, and institutions--the full information they need to make important decisions.
 
 ### Equity methods
 
